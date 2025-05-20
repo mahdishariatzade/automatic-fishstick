@@ -1,0 +1,20 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: packer
+    username: packer
+    password: $6$vRrHVA4hyJDGXT7l$9YThzyfCuPn1z.IdVFE9MP.J3vVTXe8KC.UAwFdH.rik9Vf4UQV4n7oTYVUCPlVo3GHJZXtfAb6EuKqdyHXxK. # packer
+  early-commands:
+    # otherwise packer tries to connect and exceed max attempts:
+    - systemctl stop ssh.service
+    - systemctl stop ssh.socket
+  ssh:
+    install-server: true
+    allow-pw: true
+  late-commands:
+    - |
+      if [ -f /target/etc/netplan/00-installer-config.yaml ]; then
+        sed -i "s/dhcp4: true/&\n      dhcp-identifier: mac/" /target/etc/netplan/00-installer-config.yaml
+      fi
+    - echo 'packer ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/packer
