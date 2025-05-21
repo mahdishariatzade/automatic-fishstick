@@ -1,0 +1,41 @@
+---
+- name: Install MicroK8s on Debian and Ubuntu with Swap Disabled
+  hosts: all
+  become: yes
+  vars:
+    microk8s_version: '1.33/stable'
+  tasks:
+    - name: Check distribution
+      fail:
+        msg: 'This playbook is only for Debian and Ubuntu'
+      when: ansible_distribution not in ['Debian', 'Ubuntu']
+
+    - name: Disable swap
+      command: swapoff -a
+      when: ansible_swaptotal_mb > 0
+
+    - name: Remove swap entry from /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^[^#].*swap.*'
+        state: absent
+      register: fstab_modified
+      failed_when: fstab_modified.changed and fstab_modified.failed
+
+    - name: Install snapd
+      apt:
+        name: snapd
+        state: present
+
+    - name: Install MicroK8s
+      community.general.snap:
+        name: microk8s
+        state: present
+        channel: '{{ microk8s_version }}'
+        classic: true
+
+    - name: Add user to microk8s group
+      user:
+        name: '{{ ansible_user_id }}'
+        groups: microk8s
+        append: yes
