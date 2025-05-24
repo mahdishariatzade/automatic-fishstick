@@ -49,6 +49,66 @@
         name: bash-completion
         state: present
 
+    - name: Check if bash-completion is sourced in .bashrc for user
+      become: yes
+      become_user: "{{ ansible_user_id }}"
+      shell: grep -q "bash_completion" "/home/{{ ansible_user_id }}/.bashrc" || echo "not_found"
+      register: completion_sourced_user
+      changed_when: false
+      when: ansible_user_id != 'root'
+
+    - name: Check if bash-completion is sourced in .bashrc for root
+      shell: grep -q "bash_completion" "/root/.bashrc" || echo "not_found"
+      register: completion_sourced_root
+      changed_when: false
+      when: ansible_user_id == 'root'
+
+    - name: Ensure bash-completion is sourced in .bashrc for user
+      become: yes
+      become_user: "{{ ansible_user_id }}"
+      lineinfile:
+        path: "/home/{{ ansible_user_id }}/.bashrc"
+        create: yes
+        line: 'source /usr/share/bash-completion/bash_completion'
+        insertafter: EOF
+      when: ansible_user_id != 'root' and completion_sourced_user.stdout == "not_found"
+
+    - name: Ensure bash-completion is sourced in .bashrc for root
+      lineinfile:
+        path: "/root/.bashrc"
+        create: yes
+        line: 'source /usr/share/bash-completion/bash_completion'
+        insertafter: EOF
+      when: ansible_user_id == 'root' and completion_sourced_root.stdout == "not_found"
+
+    # Add StackOverflow fix - source /etc/bash_completion directly
+    - name: Add /etc/bash_completion sourcing for user (StackOverflow fix)
+      become: yes
+      become_user: "{{ ansible_user_id }}"
+      lineinfile:
+        path: "/home/{{ ansible_user_id }}/.bashrc"
+        create: yes
+        line: 'source /etc/bash_completion'
+        insertafter: EOF
+      when: ansible_user_id != 'root'
+
+    - name: Add /etc/bash_completion sourcing for root (StackOverflow fix)
+      lineinfile:
+        path: "/root/.bashrc"
+        create: yes
+        line: 'source /etc/bash_completion'
+        insertafter: EOF
+      when: ansible_user_id == 'root'
+
+    # System-level kubectl autocompletion (recommended)
+    - name: Set up system-wide kubectl autocompletion
+      shell: |
+        kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl > /dev/null
+        sudo chmod a+r /etc/bash_completion.d/kubectl
+      args:
+        creates: "/etc/bash_completion.d/kubectl"
+
+    # User-level kubectl autocompletion (as backup and for immediate use in current session)
     - name: Enable kubectl autocompletion in bash for user
       become: yes
       become_user: "{{ ansible_user_id }}"
@@ -65,6 +125,29 @@
         create: yes
         line: 'source <(kubectl completion bash)'
         insertafter: EOF
+      when: ansible_user_id == 'root'
+
+    # Add kubectl alias with autocompletion support
+    - name: Set up kubectl alias 'k' with autocompletion for user
+      become: yes
+      become_user: "{{ ansible_user_id }}"
+      blockinfile:
+        path: "/home/{{ ansible_user_id }}/.bashrc"
+        create: yes
+        marker: "# {mark} KUBECTL ALIAS BLOCK"
+        block: |
+          alias k=kubectl
+          complete -o default -F __start_kubectl k
+      when: ansible_user_id != 'root'
+
+    - name: Set up kubectl alias 'k' with autocompletion for root
+      blockinfile:
+        path: "/root/.bashrc"
+        create: yes
+        marker: "# {mark} KUBECTL ALIAS BLOCK"
+        block: |
+          alias k=kubectl
+          complete -o default -F __start_kubectl k
       when: ansible_user_id == 'root'
 
     - name: Ensure .kube directory exists for user
