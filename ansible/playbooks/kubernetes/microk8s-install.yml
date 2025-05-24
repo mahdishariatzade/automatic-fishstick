@@ -3,11 +3,13 @@
   hosts: all
   become: yes
   vars:
-    microk8s_version: '1.33/stable'
+    microk8s_version: "1.33/stable"
+    kubectl_version: ""  # اگر خالی باشد، آخرین نسخه نصب می‌شود. مقداردهی مثل "1.29.0-1.1"
+    user_home: "/home/{{ ansible_user_id }}"
   tasks:
     - name: Check distribution
       fail:
-        msg: 'This playbook is only for Debian and Ubuntu'
+        msg: "This playbook is only for Debian and Ubuntu"
       when: ansible_distribution not in ['Debian', 'Ubuntu']
 
     - name: Disable swap
@@ -31,11 +33,68 @@
       community.general.snap:
         name: microk8s
         state: present
-        channel: '{{ microk8s_version }}'
+        channel: "{{ microk8s_version }}"
         classic: true
 
     - name: Add user to microk8s group
       user:
-        name: '{{ ansible_user_id }}'
+        name: "{{ ansible_user_id }}"
         groups: microk8s
         append: yes
+
+    - name: Install apt-transport-https, ca-certificates, and curl
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Download Google Cloud public signing key
+      ansible.builtin.get_url:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+        mode: '0644'
+
+    - name: Add Kubernetes apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
+        state: present
+        filename: kubernetes
+
+    - name: Update apt cache after adding Kubernetes repo
+      apt:
+        update_cache: yes
+
+    - name: Install kubectl (with version if specified)
+      apt:
+        name: "{{ 'kubectl=' + kubectl_version if kubectl_version else 'kubectl' }}"
+        state: present
+
+    - name: Create .kube directory in user's home
+      file:
+        path: "{{ user_home }}/.kube"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        mode: '0700'
+
+    - name: Generate microk8s kubeconfig
+      command: microk8s config
+      register: microk8s_kubeconfig
+
+    - name: Write kubeconfig to user's .kube/config
+      copy:
+        content: "{{ microk8s_kubeconfig.stdout }}"
+        dest: "{{ user_home }}/.kube/config"
+        owner: "{{ ansible_user_id }}"
+        mode: '0600'
+
+    - name: Enable kubectl bash autocompletion for user
+      lineinfile:
+        path: "{{ user_home }}/.bashrc"
+        line: 'source <(kubectl completion bash)'
+        create: yes
+        state: present
+        owner: "{{ ansible_user_id }}"
+        mode: '0644'
