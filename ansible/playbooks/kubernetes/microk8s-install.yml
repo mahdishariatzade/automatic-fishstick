@@ -2,180 +2,232 @@
 - name: Install MicroK8s on Debian and Ubuntu with Swap Disabled
   hosts: all
   become: yes
-  vars:
-    microk8s_version: '1.33/stable'
+  vars_files:
+    - vars/microk8s-vars.yml
   tasks:
-    - name: Check distribution
-      fail:
-        msg: 'This playbook is only for Debian and Ubuntu'
-      when: ansible_distribution not in ['Debian', 'Ubuntu']
+    - name: Check distribution and disable swap
+      block:
+        - name: Check distribution
+          fail:
+            msg: 'This playbook is only for Debian and Ubuntu'
+          when: ansible_distribution not in ['Debian', 'Ubuntu']
+        - name: Disable swap
+          command: swapoff -a
+          when: ansible_swaptotal_mb > 0
+        - name: Remove swap entry from /etc/fstab
+          lineinfile:
+            path: /etc/fstab
+            regexp: '^[^#].*swap.*'
+            state: absent
+          register: fstab_modified
+          failed_when: fstab_modified.changed and fstab_modified.failed
+      tags:
+        - check_distribution
+        - disable_swap
 
-    - name: Disable swap
-      command: swapoff -a
-      when: ansible_swaptotal_mb > 0
+    - name: Install required packages
+      block:
+        - name: Install snapd
+          apt:
+            name: snapd
+            state: present
+        - name: Ensure bash-completion is installed
+          apt:
+            name: bash-completion
+            state: present
+      tags:
+        - install_packages
 
-    - name: Remove swap entry from /etc/fstab
-      lineinfile:
-        path: /etc/fstab
-        regexp: '^[^#].*swap.*'
-        state: absent
-      register: fstab_modified
-      failed_when: fstab_modified.changed and fstab_modified.failed
-
-    - name: Install snapd
-      apt:
-        name: snapd
-        state: present
-
-    - name: Install MicroK8s, kubectl, and helm with specific versions
-      community.general.snap:
-        name: "{{ item.name }}"
-        state: present
-        channel: "{{ item.version | default(omit) }}"
-        classic: true
-      loop:
-        - { name: "microk8s", version: "{{ microk8s_version }}" }
-        - { name: "kubectl" }
-        - { name: "helm" }
+    - name: Install MicroK8s and related tools
+      block:
+        - name: Install MicroK8s, kubectl, and helm with specific versions
+          community.general.snap:
+            name: '{{ item.name }}'
+            state: present
+            channel: '{{ item.version | default(omit) }}'
+            classic: true
+          loop:
+            - { name: 'microk8s', version: '{{ microk8s_version }}' }
+            - { name: 'kubectl' }
+            - { name: 'helm' }
+      tags:
+        - install_microk8s
+        - install_kubectl
+        - install_helm
 
     - name: Add user to microk8s group
-      user:
-        name: '{{ ansible_user_id }}'
-        groups: microk8s
-        append: yes
+      block:
+        - name: Add user to microk8s group
+          user:
+            name: '{{ ansible_user_id }}'
+            groups: microk8s
+            append: yes
+      tags:
+        - add_user_microk8s_group
 
-    - name: Ensure bash-completion is installed
-      apt:
-        name: bash-completion
-        state: present
+    - name: Configure bash-completion
+      block:
+        - name: Check if bash-completion is sourced in .bashrc for user
+          become: yes
+          become_user: '{{ ansible_user_id }}'
+          shell: grep -q "bash_completion" "/home/{{ ansible_user_id }}/.bashrc" || echo "not_found"
+          register: completion_sourced_user
+          changed_when: false
+          when: ansible_user_id != 'root'
+        - name: Check if bash-completion is sourced in .bashrc for root
+          shell: grep -q "bash_completion" "/root/.bashrc" || echo "not_found"
+          register: completion_sourced_root
+          changed_when: false
+          when: ansible_user_id == 'root'
+        - name: Ensure bash-completion is sourced in .bashrc for user
+          become: yes
+          become_user: '{{ ansible_user_id }}'
+          lineinfile:
+            path: '/home/{{ ansible_user_id }}/.bashrc'
+            create: yes
+            line: 'source /usr/share/bash-completion/bash_completion'
+            insertafter: EOF
+          when: ansible_user_id != 'root' and completion_sourced_user.stdout == "not_found"
+        - name: Ensure bash-completion is sourced in .bashrc for root
+          lineinfile:
+            path: '/root/.bashrc'
+            create: yes
+            line: 'source /usr/share/bash-completion/bash_completion'
+            insertafter: EOF
+          when: ansible_user_id == 'root' and completion_sourced_root.stdout == "not_found"
+        - name: Add /etc/bash_completion sourcing for user (StackOverflow fix)
+          become: yes
+          become_user: '{{ ansible_user_id }}'
+          lineinfile:
+            path: '/home/{{ ansible_user_id }}/.bashrc'
+            create: yes
+            line: 'source /etc/bash_completion'
+            insertafter: EOF
+          when: ansible_user_id != 'root'
+        - name: Add /etc/bash_completion sourcing for root (StackOverflow fix)
+          lineinfile:
+            path: '/root/.bashrc'
+            create: yes
+            line: 'source /etc/bash_completion'
+            insertafter: EOF
+          when: ansible_user_id == 'root'
+      tags:
+        - configure_bash_completion
 
-    - name: Check if bash-completion is sourced in .bashrc for user
-      become: yes
-      become_user: "{{ ansible_user_id }}"
-      shell: grep -q "bash_completion" "/home/{{ ansible_user_id }}/.bashrc" || echo "not_found"
-      register: completion_sourced_user
-      changed_when: false
-      when: ansible_user_id != 'root'
+    - name: Configure kubectl autocompletion and alias
+      block:
+        - name: Set up system-wide kubectl autocompletion
+          shell: |
+            kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl > /dev/null
+            sudo chmod a+r /etc/bash_completion.d/kubectl
+          args:
+            creates: '/etc/bash_completion.d/kubectl'
+        - name: Enable kubectl autocompletion in bash for user
+          become: yes
+          become_user: '{{ ansible_user_id }}'
+          lineinfile:
+            path: '/home/{{ ansible_user_id }}/.bashrc'
+            create: yes
+            line: 'source <(kubectl completion bash)'
+            insertafter: EOF
+          when: ansible_user_id != 'root'
+        - name: Enable kubectl autocompletion in bash for root
+          lineinfile:
+            path: '/root/.bashrc'
+            create: yes
+            line: 'source <(kubectl completion bash)'
+            insertafter: EOF
+          when: ansible_user_id == 'root'
+        - name: Set up kubectl alias 'k' with autocompletion for user
+          become: yes
+          become_user: '{{ ansible_user_id }}'
+          blockinfile:
+            path: '/home/{{ ansible_user_id }}/.bashrc'
+            create: yes
+            marker: '# {mark} KUBECTL ALIAS BLOCK'
+            block: |
+              alias k=kubectl
+              complete -o default -F __start_kubectl k
+          when: ansible_user_id != 'root'
+        - name: Set up kubectl alias 'k' with autocompletion for root
+          blockinfile:
+            path: '/root/.bashrc'
+            create: yes
+            marker: '# {mark} KUBECTL ALIAS BLOCK'
+            block: |
+              alias k=kubectl
+              complete -o default -F __start_kubectl k
+          when: ansible_user_id == 'root'
+      tags:
+        - configure_kubectl_autocomplete
+        - configure_kubectl_alias
 
-    - name: Check if bash-completion is sourced in .bashrc for root
-      shell: grep -q "bash_completion" "/root/.bashrc" || echo "not_found"
-      register: completion_sourced_root
-      changed_when: false
-      when: ansible_user_id == 'root'
+    - name: Setup .kube directory and generate kubeconfig
+      block:
+        - name: Ensure .kube directory exists for user
+          file:
+            path: '/home/{{ ansible_user_id }}/.kube'
+            state: directory
+            owner: '{{ ansible_user_id }}'
+            mode: '0700'
+          when: ansible_user_id != 'root'
+        - name: Ensure .kube directory exists for root
+          file:
+            path: '/root/.kube'
+            state: directory
+            owner: root
+            mode: '0700'
+          when: ansible_user_id == 'root'
+        - name: Generate kubeconfig for user
+          become: yes
+          become_user: '{{ ansible_user_id }}'
+          shell: microk8s config > /home/{{ ansible_user_id }}/.kube/config
+          args:
+            creates: '/home/{{ ansible_user_id }}/.kube/config'
+          when: ansible_user_id != 'root'
+        - name: Generate kubeconfig for root
+          shell: microk8s config > /root/.kube/config
+          args:
+            creates: '/root/.kube/config'
+          when: ansible_user_id == 'root'
+      tags:
+        - setup_kubeconfig
+        - setup_kube_dir
 
-    - name: Ensure bash-completion is sourced in .bashrc for user
-      become: yes
-      become_user: "{{ ansible_user_id }}"
-      lineinfile:
-        path: "/home/{{ ansible_user_id }}/.bashrc"
-        create: yes
-        line: 'source /usr/share/bash-completion/bash_completion'
-        insertafter: EOF
-      when: ansible_user_id != 'root' and completion_sourced_user.stdout == "not_found"
+    - name: Configure registry mirrors
+      block:
+        - name: Create directory for registry mirror configuration
+          file:
+            path: '/var/snap/microk8s/current/args/certs.d/{{ item.name }}'
+            state: directory
+            mode: '0755'
+          loop: '{{ registry_mirrors }}'
+          loop_control:
+            label: '{{ item.name }}'
 
-    - name: Ensure bash-completion is sourced in .bashrc for root
-      lineinfile:
-        path: "/root/.bashrc"
-        create: yes
-        line: 'source /usr/share/bash-completion/bash_completion'
-        insertafter: EOF
-      when: ansible_user_id == 'root' and completion_sourced_root.stdout == "not_found"
+        - name: Configure registry mirror for each registry
+          template:
+            src: registry-mirror-hosts.j2
+            dest: '/var/snap/microk8s/current/args/certs.d/{{ item.name }}/hosts.toml'
+            mode: '0644'
+          loop: '{{ registry_mirrors }}'
+          loop_control:
+            label: '{{ item.name }}'
+          vars:
+            mirror_url: '{{ item.mirror_url | default(registry_mirror_defaults.mirror_url) }}'
+            mirror_username: '{{ item.mirror_username | default(registry_mirror_defaults.mirror_username, true) }}'
+            mirror_password: '{{ item.mirror_password | default(registry_mirror_defaults.mirror_password, true) }}'
+        - name: Restart MicroK8s to apply registry mirror configuration
+          become: yes
+          command: snap restart microk8s
+      tags:
+        - configure_registry_mirrors
 
-    # Add StackOverflow fix - source /etc/bash_completion directly
-    - name: Add /etc/bash_completion sourcing for user (StackOverflow fix)
-      become: yes
-      become_user: "{{ ansible_user_id }}"
-      lineinfile:
-        path: "/home/{{ ansible_user_id }}/.bashrc"
-        create: yes
-        line: 'source /etc/bash_completion'
-        insertafter: EOF
-      when: ansible_user_id != 'root'
-
-    - name: Add /etc/bash_completion sourcing for root (StackOverflow fix)
-      lineinfile:
-        path: "/root/.bashrc"
-        create: yes
-        line: 'source /etc/bash_completion'
-        insertafter: EOF
-      when: ansible_user_id == 'root'
-
-    # System-level kubectl autocompletion (recommended)
-    - name: Set up system-wide kubectl autocompletion
-      shell: |
-        kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl > /dev/null
-        sudo chmod a+r /etc/bash_completion.d/kubectl
-      args:
-        creates: "/etc/bash_completion.d/kubectl"
-
-    # User-level kubectl autocompletion (as backup and for immediate use in current session)
-    - name: Enable kubectl autocompletion in bash for user
-      become: yes
-      become_user: "{{ ansible_user_id }}"
-      lineinfile:
-        path: "/home/{{ ansible_user_id }}/.bashrc"
-        create: yes
-        line: 'source <(kubectl completion bash)'
-        insertafter: EOF
-      when: ansible_user_id != 'root'
-
-    - name: Enable kubectl autocompletion in bash for root
-      lineinfile:
-        path: "/root/.bashrc"
-        create: yes
-        line: 'source <(kubectl completion bash)'
-        insertafter: EOF
-      when: ansible_user_id == 'root'
-
-    # Add kubectl alias with autocompletion support
-    - name: Set up kubectl alias 'k' with autocompletion for user
-      become: yes
-      become_user: "{{ ansible_user_id }}"
-      blockinfile:
-        path: "/home/{{ ansible_user_id }}/.bashrc"
-        create: yes
-        marker: "# {mark} KUBECTL ALIAS BLOCK"
-        block: |
-          alias k=kubectl
-          complete -o default -F __start_kubectl k
-      when: ansible_user_id != 'root'
-
-    - name: Set up kubectl alias 'k' with autocompletion for root
-      blockinfile:
-        path: "/root/.bashrc"
-        create: yes
-        marker: "# {mark} KUBECTL ALIAS BLOCK"
-        block: |
-          alias k=kubectl
-          complete -o default -F __start_kubectl k
-      when: ansible_user_id == 'root'
-
-    - name: Ensure .kube directory exists for user
-      file:
-        path: "/home/{{ ansible_user_id }}/.kube"
-        state: directory
-        owner: "{{ ansible_user_id }}"
-        mode: '0700'
-      when: ansible_user_id != 'root'
-
-    - name: Ensure .kube directory exists for root
-      file:
-        path: "/root/.kube"
-        state: directory
-        owner: root
-        mode: '0700'
-      when: ansible_user_id == 'root'
-
-    - name: Generate kubeconfig for user
-      become: yes
-      become_user: "{{ ansible_user_id }}"
-      shell: microk8s config > /home/{{ ansible_user_id }}/.kube/config
-      args:
-        creates: "/home/{{ ansible_user_id }}/.kube/config"
-      when: ansible_user_id != 'root'
-
-    - name: Generate kubeconfig for root
-      shell: microk8s config > /root/.kube/config
-      args:
-        creates: "/root/.kube/config"
-      when: ansible_user_id == 'root'
+    - name: Enable selected MicroK8s addons
+      block:
+        - name: Enable MicroK8s addon(s)
+          command: microk8s enable {{ item }}
+          loop: '{{ microk8s_addons }}'
+          when: microk8s_addons | length > 0
+      tags:
+        - enable_microk8s_addons

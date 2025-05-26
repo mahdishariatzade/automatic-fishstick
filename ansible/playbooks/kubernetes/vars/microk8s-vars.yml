@@ -1,0 +1,21 @@
+---
+# MicroK8s Configuration Variables
+microk8s_version: '1.33/stable'
+
+# Registry Mirror Configuration
+registry_mirror_defaults:
+  mirror_url: 'https://default.mirror.url'
+  mirror_username: 'default_user'
+  mirror_password: 'default_pass'
+
+registry_mirrors:
+  - name: 'docker.io'
+  - name: 'registry.k8s.io'
+    mirror_url: 'https://registry.cn-hangzhou.aliyuncs.com/google_containers'
+  - name: 'my.private.registry'
+    mirror_url: 'https://my.private.mirror'
+    mirror_username: 'myuser'
+    mirror_password: 'mypass'
+
+# Addons to enable
+microk8s_addons: [] # Empty by default. To enable: ["hostpath-storage", "metallb:192.168.1.240-192.168.1.250"]
