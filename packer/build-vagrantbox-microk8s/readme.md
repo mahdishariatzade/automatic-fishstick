@@ -21,7 +21,7 @@
 ابتدا فایل playbook مربوط به نصب MicroK8s را دانلود کنید:
 
 ```bash
-curl -L https://github.com/mahdishariatzade/automatic-fishstick/blob/2404d38518e57fb479c46147c36c97ac0841504b/ansible/playbooks/kubernetes/microk8s-install.yml -o playbook.yml
+curl -L https://raw.githubusercontent.com/mahdishariatzade/automatic-fishstick/refs/heads/main/ansible/playbooks/kubernetes/microk8s-install.yml -o playbook.yml
 ```
 
 ### ۲. مقداردهی اولیه پروژه با Packer
