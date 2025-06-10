@@ -1,0 +1,73 @@
+# Traefik configuration values for Helm chart deployment
+traefik_values:
+  # Port configurations for HTTP and HTTPS traffic
+  ports:
+    # HTTP port configuration with redirection to HTTPS
+    web:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+    # HTTPS port configuration with TLS enabled
+    websecure:
+      tls:
+        enabled: true
+        certResolver: default
+  # Service configuration for exposing Traefik
+  service:
+    type: LoadBalancer
+  # Deployment settings for Traefik pods
+  deployment:
+    replicas: 1
+  # IngressClass definition for Traefik
+  ingressClass:
+    name: traefik
+  # Provider configurations for Kubernetes resources
+  providers:
+    kubernetesCRD:
+      ingressClass: traefik
+    kubernetesIngress:
+      ingressClass: traefik
+  # Persistence settings for storing ACME certificates
+  persistence:
+    enabled: true
+    storageClass: microk8s-hostpath
+    name: traefik-acme
+    accessMode: ReadWriteOnce
+    size: 100Mi
+  # Additional volumes for certificate storage
+  additionalVolumes:
+    - name: traefik-acme
+      persistentVolumeClaim:
+        claimName: traefik-acme
+  # Volume mounts for accessing certificate storage
+  additionalVolumeMounts:
+    - name: traefik-acme
+      mountPath: /acme
+  # Security context for Traefik container
+  securityContext:
+    fsGroup: 1000
+    runAsUser: 1000
+    runAsGroup: 1000
+  # Certificate resolvers for TLS certificate management
+  certificatesResolvers:
+    default:
+      acme:
+        email: EMAIL@EXAMPLE.COM
+        storage: /acme/acme.json
+        tlsChallenge: true
+  # IngressRoute configuration for Traefik dashboard
+  ingressRoute:
+    dashboard:
+      enabled: true
+      matchRule: Host(`traefik.example.com`)
+      entryPoints: ['websecure']
+      tls:
+        certResolver: default
+  # Logging configuration for Traefik
+  logs:
+    general:
+      level: DEBUG
+    access:
+      enabled: true
