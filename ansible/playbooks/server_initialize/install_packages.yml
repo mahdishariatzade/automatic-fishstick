@@ -1,0 +1,58 @@
+---
+- name: Install and configure ProxyChains and pc wrapper
+  hosts: all
+  become: true
+  vars_files:
+    - proxychains_vars.yml
+
+  tasks:
+    - block:
+        - name: Update apt cache (Debian/Ubuntu)
+          ansible.builtin.apt:
+            update_cache: true
+        - name: Install proxychains package (Debian/Ubuntu)
+          ansible.builtin.apt:
+            name: proxychains
+            state: present
+      when: ansible_pkg_mgr == 'apt'
+      tags:
+        - install_proxychains
+
+    - block:
+        - name: Configure /etc/proxychains.conf
+          ansible.builtin.copy:
+            dest: /etc/proxychains.conf
+            owner: root
+            group: root
+            mode: '0644'
+            content: |
+              # Managed by Ansible
+              strict_chain
+              proxy_dns
+              tcp_read_time_out 15000
+              tcp_connect_time_out 8000
+
+              [ProxyList]
+              {% for proxy in proxychains_proxies %}
+              {{ proxy }}
+              {% endfor %}
+      tags:
+        - configure_proxychains
+
+    - block:
+        - name: Create /usr/local/bin directory
+          ansible.builtin.file:
+            path: /usr/local/bin
+            state: directory
+            mode: '0755'
+        - name: Install 'pc' wrapper script
+          ansible.builtin.copy:
+            dest: /usr/local/bin/pc
+            owner: root
+            group: root
+            mode: '0755'
+            content: |
+              #!/bin/bash
+              exec proxychains "$@"
+      tags:
+        - install_pc_wrapper

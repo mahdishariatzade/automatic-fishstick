@@ -1,0 +1,5 @@
+---
+# proxychains_vars.yml - ProxyChains variable definitions
+# Override this list via -e proxychains_proxies when running the playbook
+proxychains_proxies:
+  # - format: TYPE[socks,http,https] HOST PORT USERNAME PASSWORD

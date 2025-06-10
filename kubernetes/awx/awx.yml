@@ -1,0 +1,26 @@
+---
+apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: awx
+spec:
+  # service_type: NodePort
+  # nodeport_port: 31000
+  admin_user: ADMIN_USER_NAME
+  admin_email: ADMIN_EMAIL
+  admin_password_secret: ADMIN_PASSWORD
+  control_plane_ee_image: quay.io/ansible/awx-ee:latest
+#  task_replicas: 2
+  no_log: false
+#---
+#apiVersion: v1
+#kind: ConfigMap
+#metadata:
+#  name: playbooks-extra-config
+#  namespace: awx
+#data:
+#  ansible.cfg: |
+#    [defaults]
+#    remote_tmp = /tmp
+#    [ssh_connection]
+#    ssh_args = -C -o ControlMaster=auto -o ControlPersist=60s
