@@ -1,0 +1,17 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: awx-ingressroute
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  namespace: {{ awx_namespace }}
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`{{ awx_ingress_host }}`)
+      kind: Rule
+      services:
+        - name: {{ awx_service_name | default('awx-service') }}
+          port: 80 

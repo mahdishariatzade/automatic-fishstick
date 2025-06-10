@@ -1,0 +1,97 @@
+- name: Install AWX Operator on Kubernetes using Kustomize
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Ensure kubectl is installed
+      ansible.builtin.command:
+        cmd: which kubectl
+      register: kubectl_check
+      failed_when: kubectl_check.rc != 0
+      changed_when: false
+
+    - name: Ensure required system packages are installed
+      ansible.builtin.package:
+        name: '{{ item }}'
+        state: present
+      become: true
+      loop:
+        - python3-pip
+        - python3-venv
+
+    - name: Ensure kubernetes Python package is installed
+      ansible.builtin.apt:
+        name: python3-kubernetes
+        state: present
+      become: true
+
+    - name: Create namespace for AWX
+      kubernetes.core.k8s:
+        name: '{{ awx_namespace }}'
+        api_version: v1
+        kind: Namespace
+        state: present
+
+    - name: Create kustomization directory
+      ansible.builtin.file:
+        path: '{{ kustomization_dir }}'
+        state: directory
+        mode: '0755'
+
+    - name: Create kustomization.yaml for AWX Operator
+      ansible.builtin.template:
+        src: '{{ playbook_dir }}/templates/kustomization.yaml.j2'
+        dest: '{{ kustomization_dir }}/kustomization.yaml'
+        mode: '0644'
+
+    - name: Create AWX deployment spec file
+      ansible.builtin.template:
+        src: '{{ playbook_dir }}/templates/awx.yml.j2'
+        dest: '{{ kustomization_dir }}/awx.yml'
+        mode: '0644'
+
+    - name: Create Traefik IngressRoute for AWX
+      ansible.builtin.template:
+        src: '{{ playbook_dir }}/templates/awx-ingressroute.yml.j2'
+        dest: '{{ kustomization_dir }}/awx-ingressroute.yml'
+        mode: '0644'
+
+    - name: Apply kustomization to deploy AWX Operator and instance
+      ansible.builtin.command:
+        cmd: kubectl apply -k "{{ kustomization_dir }}"
+      register: apply_result
+      changed_when: apply_result.rc == 0
+      failed_when: apply_result.rc != 0
+
+    - name: Wait for AWX Operator to be ready
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: '{{ awx_namespace }}'
+        label_selectors:
+          - app.kubernetes.io/name=awx-operator
+        status_condition:
+          type: Ready
+          status: 'True'
+      register: operator_status
+      until: operator_status.resources | length > 0
+      retries: 30
+      delay: 10
+
+    - name: Wait for AWX instance to be ready
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: '{{ awx_namespace }}'
+        label_selectors:
+          - app.kubernetes.io/name=awx
+        status_condition:
+          type: Ready
+          status: 'True'
+      register: awx_status
+      until: awx_status.resources | length > 0
+      retries: 60
+      delay: 10
+
+    - name: Display AWX deployment status
+      ansible.builtin.debug:
+        msg: 'AWX Operator and instance deployed successfully in namespace {{ awx_namespace }}'
