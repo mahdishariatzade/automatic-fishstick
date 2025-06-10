@@ -74,7 +74,7 @@
           type: Ready
           status: 'True'
       register: operator_status
-      until: operator_status.resources | length > 0
+      until: operator_status.resources is defined and operator_status.resources | length > 0
       retries: 30
       delay: 10
 
@@ -88,7 +88,7 @@
           type: Ready
           status: 'True'
       register: awx_status
-      until: awx_status.resources | length > 0
+      until: awx_status.resources is defined and awx_status.resources | length > 0
       retries: 60
       delay: 10
 

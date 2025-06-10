@@ -1,0 +1,21 @@
+- name: Deploy Traefik Ingress Controller
+  hosts: all
+  vars_files:
+    - vars/vars.yml
+  tasks:
+    - name: Add Traefik Helm Repository
+      kubernetes.core.helm_repository:
+        name: traefik
+        repo_url: https://helm.traefik.io/traefik
+        state: present
+
+    - name: Deploy Traefik Ingress Controller using Helm
+      kubernetes.core.helm:
+        name: traefik
+        chart_ref: traefik/traefik
+        release_namespace: kube-system
+        create_namespace: true
+        state: present
+        values: '{{ traefik_values }}'
+        wait: true
+        timeout: 300s
