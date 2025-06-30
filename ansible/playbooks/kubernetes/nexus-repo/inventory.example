@@ -1,0 +1,19 @@
+# Example Inventory file for Nexus Repository Deployment
+# Copy this file to 'inventory' and modify as needed
+
+[kubernetes_masters]
+# Replace with your Kubernetes master node IP/hostname
+k8s-master ansible_host=192.168.1.100 ansible_user=ubuntu
+
+[localhost]
+# For running locally where kubectl is already configured
+localhost ansible_connection=local
+
+[all:vars]
+# Common variables for all hosts
+ansible_python_interpreter=/usr/bin/python3
+
+# Example of overriding variables in inventory
+# nexus_hostname=nexus.yourdomain.com
+# nexus_namespace=production-nexus
+# nexus_storage_size=50Gi 

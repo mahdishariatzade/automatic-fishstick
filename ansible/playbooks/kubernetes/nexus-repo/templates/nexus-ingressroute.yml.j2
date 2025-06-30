@@ -1,0 +1,20 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: nexus-repository-ingressroute
+  namespace: '{{ nexus_namespace }}'
+  labels:
+    app: nexus-repository
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{ nexus_hostname }}`)
+      kind: Rule
+      services:
+        - name: nexus-repository-service
+          port: 8081
+      middlewares:
+        - name: nexus-headers
+  tls:
+    secretName: '{{ nexus_tls_secret }}' 

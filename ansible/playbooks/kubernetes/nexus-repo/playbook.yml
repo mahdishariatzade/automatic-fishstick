@@ -1,0 +1,117 @@
+---
+- name: Deploy Nexus Repository on Kubernetes
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Ensure kubectl is installed
+      ansible.builtin.command:
+        cmd: which kubectl
+      register: kubectl_check
+      failed_when: kubectl_check.rc != 0
+      changed_when: false
+
+    - name: Ensure required system packages are installed
+      ansible.builtin.package:
+        name: '{{ item }}'
+        state: present
+      become: true
+      loop:
+        - python3-pip
+        - python3-kubernetes
+
+    - name: Ensure kubernetes Python package is installed
+      ansible.builtin.apt:
+        name: python3-kubernetes
+        state: present
+      become: true
+      ignore_errors: true
+
+    - name: Create namespace for Nexus Repository
+      kubernetes.core.k8s:
+        name: '{{ nexus_namespace }}'
+        api_version: v1
+        kind: Namespace
+        state: present
+
+    - name: Create PersistentVolumeClaim for Nexus data
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'templates/nexus-pvc.yml.j2') | from_yaml }}"
+        state: present
+
+    - name: Deploy Nexus Repository
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'templates/nexus-deployment.yml.j2') | from_yaml }}"
+        state: present
+
+    - name: Create Service for Nexus Repository
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'templates/nexus-service.yml.j2') | from_yaml }}"
+        state: present
+
+    - name: Create Traefik Middleware for Nexus Repository Headers
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'templates/nexus-headers-middleware.yml.j2') | from_yaml }}"
+        state: present
+
+    - name: Create Traefik IngressRoute for Nexus Repository
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'templates/nexus-ingressroute.yml.j2') | from_yaml }}"
+        state: present
+
+    - name: Create HTTPS redirect middleware
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'templates/nexus-redirect-middleware.yml.j2') | from_yaml }}"
+        state: present
+      when: nexus_enable_https_redirect | default(true)
+
+    - name: Create HTTP to HTTPS redirect IngressRoute
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'templates/nexus-redirect-ingressroute.yml.j2') | from_yaml }}"
+        state: present
+      when: nexus_enable_https_redirect | default(true)
+
+    - name: Wait for Nexus Repository deployment to be ready
+      kubernetes.core.k8s_info:
+        kind: Deployment
+        name: nexus-repository
+        namespace: '{{ nexus_namespace }}'
+        wait_condition:
+          type: Available
+          status: 'True'
+      register: deployment_status
+      until: deployment_status.resources[0].status.availableReplicas | default(0) >= 1
+      retries: 30
+      delay: 20
+
+    - name: Wait for Nexus Repository pods to be ready
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: '{{ nexus_namespace }}'
+        label_selectors:
+          - app=nexus-repository
+        status_condition:
+          type: Ready
+          status: 'True'
+      register: pod_status
+      until: pod_status.resources is defined and pod_status.resources | length > 0
+      retries: 30
+      delay: 20
+
+    - name: Get Nexus Repository service information
+      kubernetes.core.k8s_info:
+        kind: Service
+        name: nexus-repository-service
+        namespace: '{{ nexus_namespace }}'
+      register: service_info
+
+    - name: Display deployment information
+      ansible.builtin.debug:
+        msg: 'Nexus Repository deployed successfully! Namespace: {{ nexus_namespace }}, Service: nexus-repository-service, Access URL: https://{{ nexus_hostname }}, Traefik IngressRoute: nexus-repository-ingressroute'
+
+    - name: Show how to get admin password
+      ansible.builtin.debug:
+        msg: |
+          To retrieve the initial admin password, execute:
+          kubectl exec -n {{ nexus_namespace }} deployment/nexus-repository -- cat /nexus-data/admin.password

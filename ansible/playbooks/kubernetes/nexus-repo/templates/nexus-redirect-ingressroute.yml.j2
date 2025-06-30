@@ -1,0 +1,16 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: nexus-repository-redirect
+  namespace: '{{ nexus_namespace }}'
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`{{ nexus_hostname }}`)
+      kind: Rule
+      middlewares:
+        - name: redirect-to-https
+      services:
+        - name: nexus-repository-service
+          port: 8081 

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-repository
+  namespace: '{{ nexus_namespace }}'
+  labels:
+    app: nexus-repository
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-repository
+  template:
+    metadata:
+      labels:
+        app: nexus-repository
+    spec:
+      containers:
+      - name: nexus
+        image: '{{ nexus_image }}:{{ nexus_version }}'
+        ports:
+        - containerPort: 8081
+          name: http
+        - containerPort: 8443
+          name: https
+        env:
+        - name: NEXUS_SECURITY_RANDOMPASSWORD
+          value: 'false'
+        - name: INSTALL4J_ADD_VM_PARAMS
+          value: '{{ nexus_jvm_params }}'
+        volumeMounts:
+        - name: nexus-data
+          mountPath: /nexus-data
+        resources:
+          requests:
+            memory: '{{ nexus_memory_request }}'
+            cpu: '{{ nexus_cpu_request }}'
+          limits:
+            memory: '{{ nexus_memory_limit }}'
+            cpu: '{{ nexus_cpu_limit }}'
+        livenessProbe:
+          httpGet:
+            path: /service/rest/v1/status
+            port: 8081
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /service/rest/v1/status
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: nexus-data
+        persistentVolumeClaim:
+          claimName: nexus-data-pvc 
