@@ -1,0 +1,19 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: nexus-docker-registry-ingress
+  namespace: '{{ nexus_namespace }}'
+spec:
+  entryPoints:
+    # This entrypoint must be configured in Traefik to handle TCP traffic on the desired port (e.g., 443 or a custom port)
+    - websecure
+  routes:
+  - match: HostSNI(`{{ nexus_docker_registry_host }}`)
+    services:
+    - name: nexus-repository-service
+      port: {{ nexus_docker_registry_port }}
+      # terminationDelay is recommended for TCP services to allow graceful connection termination
+      terminationDelay: 100
+  tls:
+    # Passthrough allows the Nexus Repository to handle the TLS termination directly.
+    passthrough: true 

@@ -91,20 +91,24 @@ ansible-playbook -i inventory playbook.yml
 1. **nexus-headers**: اضافه کردن header های امنیتی
 2. **redirect-to-https**: تبدیل HTTP به HTTPS
 
+### Docker Registry
+
+برای فعال کردن Nexus به عنوان یک Docker Registry، مراحل زیر را دنبال کنید:
+
+1.  در فایل `vars.yml`، گزینه‌ها را فعال کنید:
+    ```yaml
+    nexus_enable_docker_repository: true
+    nexus_docker_registry_port: 8082
+    nexus_docker_registry_host: 'docker.yourdomain.com'
+    ```
+
+2.  Playbook یک `IngressRouteTCP` برای شما ایجاد می‌کند. این Ingress از نوع `TLS Passthrough` است، یعنی خود Nexus مسئول مدیریت Certificate خواهد بود.
+
+3.  پس از اجرای playbook، باید در وب UI یک Docker (hosted) repository ایجاد کنید و در تنظیمات آن، پورت HTTPS را روی `{{ nexus_docker_registry_port }}` تنظیم کنید.
+
+4.  برای `docker login`، به یک Certificate معتبر برای دامنه `docker.yourdomain.com` نیاز دارید.
+
 ## تنظیمات اضافی
-
-### فعال کردن Docker Registry در Nexus
-
-اگر می‌خواهید از Nexus به عنوان Docker Registry استفاده کنید:
-
-1. در فایل `vars.yml`:
-   ```yaml
-   nexus_enable_docker_repository: true
-   nexus_docker_registry_port: 8082
-   nexus_docker_registry_host: 'docker.example.com'
-   ```
-
-2. پس از deploy، باید در وب UI Nexus یک Docker repository ایجاد کنید.
 
 ### استفاده از Storage Class خاص
 

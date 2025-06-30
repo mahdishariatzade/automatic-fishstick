@@ -72,6 +72,12 @@
         state: present
       when: nexus_enable_https_redirect | default(true)
 
+    - name: Create Traefik IngressRouteTCP for Docker Registry
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'templates/nexus-docker-ingressroutetcp.yml.j2') | from_yaml }}"
+        state: present
+      when: nexus_enable_docker_repository | default(false)
+
     - name: Wait for Nexus Repository deployment to be ready
       kubernetes.core.k8s_info:
         kind: Deployment
