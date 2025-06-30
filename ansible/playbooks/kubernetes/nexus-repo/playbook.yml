@@ -76,6 +76,12 @@
         state: present
       when: nexus_enable_https_redirect
 
+    - name: Create Traefik TLSOption for Docker Registry passthrough
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'templates/nexus-tls-option.yml.j2') | from_yaml }}"
+        state: present
+      when: nexus_enable_docker_repository
+
     - name: Create Traefik IngressRouteTCP for Docker Registry
       kubernetes.core.k8s:
         definition: "{{ lookup('template', 'templates/nexus-docker-ingressroutetcp.yml.j2') | from_yaml }}"
