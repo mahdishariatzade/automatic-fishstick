@@ -40,6 +40,10 @@
         definition: "{{ lookup('template', 'templates/nexus-pvc.yml.j2') | from_yaml }}"
         state: present
 
+    - name: 'DEBUG: Show rendered deployment manifest for inspection'
+      ansible.builtin.debug:
+        msg: "{{ lookup('template', 'templates/nexus-deployment.yml.j2').split('\\n') }}"
+
     - name: Deploy Nexus Repository
       kubernetes.core.k8s:
         definition: "{{ lookup('template', 'templates/nexus-deployment.yml.j2') | from_yaml }}"
