@@ -3,6 +3,8 @@ kind: IngressRoute
 metadata:
   name: nexus-repository-ingressroute
   namespace: '{{ nexus_namespace }}'
+  annotations:
+    kubernetes.io/ingress.class: traefik
   labels:
     app: nexus-repository
 spec:
