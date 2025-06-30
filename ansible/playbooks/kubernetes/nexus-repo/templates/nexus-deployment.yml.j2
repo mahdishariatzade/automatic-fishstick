@@ -23,10 +23,10 @@ spec:
           name: http
         - containerPort: 8443
           name: https
-        {%- if nexus_enable_docker_repository %}
+        {% if nexus_enable_docker_repository -%}
         - containerPort: {{ nexus_docker_registry_port }}
           name: docker
-        {%- endif %}
+        {% endif -%}
         env:
         - name: NEXUS_SECURITY_RANDOMPASSWORD
           value: 'false'

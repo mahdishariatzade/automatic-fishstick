@@ -16,11 +16,11 @@ spec:
     port: 8443
     targetPort: 8443
     protocol: TCP
-  {%- if nexus_enable_docker_repository %}
+  {% if nexus_enable_docker_repository -%}
   - name: docker
     port: {{ nexus_docker_registry_port }}
     targetPort: {{ nexus_docker_registry_port }}
     protocol: TCP
-  {%- endif %}
+  {% endif -%}
   selector:
     app: nexus-repository 
