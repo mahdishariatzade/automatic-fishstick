@@ -64,19 +64,19 @@
       kubernetes.core.k8s:
         definition: "{{ lookup('template', 'templates/nexus-redirect-middleware.yml.j2') | from_yaml }}"
         state: present
-      when: nexus_enable_https_redirect | default(true)
+      when: nexus_enable_https_redirect
 
     - name: Create HTTP to HTTPS redirect IngressRoute
       kubernetes.core.k8s:
         definition: "{{ lookup('template', 'templates/nexus-redirect-ingressroute.yml.j2') | from_yaml }}"
         state: present
-      when: nexus_enable_https_redirect | default(true)
+      when: nexus_enable_https_redirect
 
     - name: Create Traefik IngressRouteTCP for Docker Registry
       kubernetes.core.k8s:
         definition: "{{ lookup('template', 'templates/nexus-docker-ingressroutetcp.yml.j2') | from_yaml }}"
         state: present
-      when: nexus_enable_docker_repository | default(false)
+      when: nexus_enable_docker_repository
 
     - name: Wait for Nexus Repository deployment to be ready
       kubernetes.core.k8s_info:
