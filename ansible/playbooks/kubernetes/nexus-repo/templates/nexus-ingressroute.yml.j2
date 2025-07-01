@@ -48,6 +48,7 @@ apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: nexus-ipallowlist
+  namespace: '{{ nexus_namespace }}'
 spec:
   ipAllowList:
     sourceRange:
