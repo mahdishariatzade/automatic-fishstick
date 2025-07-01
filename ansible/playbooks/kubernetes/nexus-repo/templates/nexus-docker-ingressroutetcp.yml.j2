@@ -8,14 +8,11 @@ spec:
     # This entrypoint must be configured in Traefik to handle TCP traffic on the desired port (e.g., 443 or a custom port)
     - websecure
   routes:
-  - match: Host(`{{ nexus_docker_registry_host }}`)
+  - match: HostSNI(`{{ nexus_docker_registry_host }}`)
     services:
     - name: nexus-repository-service
       port: {{ nexus_docker_registry_port }}
       # terminationDelay is recommended for TCP services to allow graceful connection termination
       terminationDelay: 100
   tls:
-    passthrough: false
-    options:
-      name: nexus-passthrough-tls-option
-      namespace: '{{ nexus_namespace }}' 
+    passthrough: true 

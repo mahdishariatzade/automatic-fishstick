@@ -20,3 +20,19 @@ spec:
         - name: nexus-headers
   tls:
     secretName: '{{ nexus_tls_secret }}' 
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: nexus-headers
+  namespace: '{{ nexus_namespace }}'
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+      X-Forwarded-Port: "443"
+    customResponseHeaders:
+      X-Content-Type-Options: "nosniff"
+      X-Frame-Options: "DENY"
+      X-XSS-Protection: "1; mode=block" 

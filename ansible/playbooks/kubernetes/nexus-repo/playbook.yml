@@ -54,33 +54,16 @@
         definition: "{{ lookup('template', 'templates/nexus-service.yml.j2') | from_yaml }}"
         state: present
 
-    - name: Create Traefik Middleware for Nexus Repository Headers
-      kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'templates/nexus-headers-middleware.yml.j2') | from_yaml }}"
-        state: present
-
     - name: Create Traefik IngressRoute for Nexus Repository
       kubernetes.core.k8s:
         definition: "{{ lookup('template', 'templates/nexus-ingressroute.yml.j2') | from_yaml }}"
         state: present
-
-    - name: Create HTTPS redirect middleware
-      kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'templates/nexus-redirect-middleware.yml.j2') | from_yaml }}"
-        state: present
-      when: nexus_enable_https_redirect
 
     - name: Create HTTP to HTTPS redirect IngressRoute
       kubernetes.core.k8s:
         definition: "{{ lookup('template', 'templates/nexus-redirect-ingressroute.yml.j2') | from_yaml }}"
         state: present
       when: nexus_enable_https_redirect
-
-    - name: Create Traefik TLSOption for Docker Registry passthrough
-      kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'templates/nexus-tls-option.yml.j2') | from_yaml }}"
-        state: present
-      when: nexus_enable_docker_repository
 
     - name: Create Traefik IngressRouteTCP for Docker Registry
       kubernetes.core.k8s:

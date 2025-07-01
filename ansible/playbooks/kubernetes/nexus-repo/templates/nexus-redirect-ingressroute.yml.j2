@@ -14,3 +14,13 @@ spec:
       services:
         - name: nexus-repository-service
           port: 8081 
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-to-https
+  namespace: '{{ nexus_namespace }}'
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true 
