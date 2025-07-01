@@ -16,8 +16,6 @@ spec:
     services:
     - name: nexus-repository-service
       port: {{ nexus_docker_registry_port }}
-    middlewares:
-      - name: nexus-headers
   tls:
     certResolver: default
     domains:
