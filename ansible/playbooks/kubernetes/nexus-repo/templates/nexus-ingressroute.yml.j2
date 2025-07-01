@@ -16,8 +16,6 @@ spec:
       services:
         - name: nexus-repository-service
           port: 8081
-      middlewares:
-        - name: nexus-headers
   tls:
     certResolver: default
     domains:
@@ -25,19 +23,3 @@ spec:
     {# options:
       name: nexus-passthrough-tls-option
       namespace: '{{ nexus_namespace }}' #}
-
----
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: nexus-headers
-  namespace: '{{ nexus_namespace }}'
-spec:
-  headers:
-    customRequestHeaders:
-      X-Forwarded-Proto: "https"
-      X-Forwarded-Port: "443"
-    customResponseHeaders:
-      X-Content-Type-Options: "nosniff"
-      X-Frame-Options: "SAMEORIGIN"
-      X-XSS-Protection: "1; mode=block" 
