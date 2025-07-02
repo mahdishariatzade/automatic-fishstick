@@ -1,0 +1,12 @@
+concurrent = 1
+check_interval = 0
+
+[[runners]]
+  name = "{{ runner_name }}"
+  url = "{{ gitlab_url }}"
+  token = "{{ runner_token }}"
+  executor = "docker"
+  [runners.docker]
+    image = "alpine:latest"
+    privileged = false
+    volumes = ["/cache"] 

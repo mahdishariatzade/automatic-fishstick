@@ -1,0 +1,62 @@
+---
+- name: Create GitLab Runner using Authentication Token
+  hosts: all
+  vars:
+    gitlab_url: 'https://your-gitlab-instance.com'
+    gitlab_access_token: 'your_personal_access_token'
+    runner_image: 'gitlab/gitlab-runner:latest'
+    runner_name: 'docker-runner-{{ inventory_hostname }}'
+    runner_tags: '{{ inventory_hostname }}'
+  tasks:
+    - name: Create a new runner in GitLab
+      tags:
+        - create_runner
+      uri:
+        url: '{{ gitlab_url }}/api/v4/user/runners'
+        method: POST
+        headers:
+          PRIVATE-TOKEN: '{{ gitlab_access_token }}'
+        body_format: json
+        body:
+          runner_type: 'instance_type'
+          description: '{{ runner_name }}'
+          tag_list: '{{ runner_tags }}'
+          run_untagged: true
+        status_code: 201
+        use_proxy: true
+      register: runner_response
+      delegate_to: localhost
+
+    - name: Extract runner token
+      tags:
+        - extract_runner_token
+      set_fact:
+        runner_token: '{{ runner_response.json.token }}'
+
+    - name: Create runner config directory on runner host
+      become: true
+      file:
+        path: /srv/gitlab-runner/config
+        state: directory
+        mode: '0755'
+
+    - name: Create GitLab Runner config.toml
+      become: true
+      tags:
+        - create_config
+      ansible.builtin.template:
+        src: templates/config.toml.j2
+        dest: /srv/gitlab-runner/config/config.toml
+
+    - name: Run GitLab Runner container
+      tags:
+        - run_gitlab_runner
+      docker_container:
+        name: '{{ runner_name }}'
+        image: '{{ runner_image }}'
+        state: started
+        recreate: true
+        restart_policy: always
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - /srv/gitlab-runner/config:/etc/gitlab-runner
