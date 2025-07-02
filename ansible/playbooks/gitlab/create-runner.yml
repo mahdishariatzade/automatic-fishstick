@@ -51,7 +51,7 @@
     - name: Run GitLab Runner container
       tags:
         - run_gitlab_runner
-      docker_container:
+      community.docker.docker_container:
         name: '{{ runner_name }}'
         image: '{{ runner_image }}'
         state: started
