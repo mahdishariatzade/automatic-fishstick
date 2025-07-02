@@ -1,12 +1,8 @@
 ---
 - name: Create GitLab Runner using Authentication Token
   hosts: all
-  vars:
-    gitlab_url: 'https://your-gitlab-instance.com'
-    gitlab_access_token: 'your_personal_access_token'
-    runner_image: 'gitlab/gitlab-runner:latest'
-    runner_name: 'docker-runner-{{ inventory_hostname }}'
-    runner_tags: '{{ inventory_hostname }}'
+  vars_files:
+    - vars.yml
   tasks:
     - name: Create a new runner in GitLab
       tags:

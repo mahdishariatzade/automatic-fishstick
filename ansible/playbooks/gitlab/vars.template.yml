@@ -1,0 +1,6 @@
+---
+gitlab_url: 'https://your-gitlab-instance.com'
+gitlab_access_token: 'your_personal_access_token'
+runner_image: 'gitlab/gitlab-runner:latest'
+runner_name: 'docker-runner-{{ inventory_hostname }}'
+runner_tags: '{{ inventory_hostname }}'
