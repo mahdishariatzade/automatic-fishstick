@@ -4,3 +4,6 @@ gitlab_access_token: 'your_personal_access_token'
 runner_image: 'gitlab/gitlab-runner:latest'
 runner_name: 'docker-runner-{{ inventory_hostname }}'
 runner_tags: '{{ inventory_hostname }}'
+# runner_token: 
+# concurrent: 5
+# helper_image: 
