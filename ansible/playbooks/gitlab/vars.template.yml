@@ -7,3 +7,4 @@ runner_tags: '{{ inventory_hostname }}'
 # runner_token: 
 # concurrent: 5
 # helper_image: 
+# recreate_config_file: true

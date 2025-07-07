@@ -43,6 +43,7 @@
       ansible.builtin.template:
         src: templates/config.toml.j2
         dest: /srv/gitlab-runner/config/config.toml
+        force: '{{ recreate_config_file | default(false)}}'
 
     - name: Run GitLab Runner container
       become: true
