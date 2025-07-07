@@ -1,4 +1,4 @@
-concurrent = {% if concurrent is defined %}{{ concurrent }}{% else %}5{% endif %}
+concurrent = {{ concurrent | default(1) }}
 check_interval = 0
 
 [[runners]]
