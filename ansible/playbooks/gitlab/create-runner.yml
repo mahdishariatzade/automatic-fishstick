@@ -45,6 +45,7 @@
         dest: /srv/gitlab-runner/config/config.toml
 
     - name: Run GitLab Runner container
+      become: true
       tags:
         - run_gitlab_runner
       community.docker.docker_container:
