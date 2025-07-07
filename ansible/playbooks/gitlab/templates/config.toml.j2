@@ -1,4 +1,4 @@
-concurrent = 1
+concurrent = {% if concurrent is defined %}{{ concurrent }}{% else %}5{% endif %}
 check_interval = 0
 
 [[runners]]
@@ -6,7 +6,25 @@ check_interval = 0
   url = "{{ gitlab_url }}"
   token = "{{ runner_token }}"
   executor = "docker"
+  [runners.custom_build_dir]
+  [runners.cache]
+      MaxUploadedArchiveSize = 0
+      [runners.cache.s3]
+      {# ServerAddress = ""
+      BucketName = "gitlab-runner-cache"
+      Insecure = true
+      AccessKey = "{{ s3_access_key }}"
+      SecretKey = "{{ s3_secret_key }}"
+      Region = "ir-thr-at1"
+      Endpoint = "" #}
   [runners.docker]
+    {% if image is defined -%}
+    image = "{{ image }}"
+    {% else -%}
     image = "alpine:latest"
+    {% endif -%}
+    {% if helper_image is defined -%}
+    helper_image = "{{ helper_image }}"
+    {% endif -%}
     privileged = false
-    volumes = ["/cache"] 
+    volumes = ["/cache", "/var/run/docker.sock:/var/run/docker.sock","/builds"] 
