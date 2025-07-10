@@ -54,21 +54,6 @@
         network_mode: host
         env:
           BACKHAUL_CONFIG: 'config.toml'
-        sysctls:
-          net.ipv4.ip_local_port_range: '1024 65535'
-          net.ipv4.tcp_tw_reuse: '1'
-          net.ipv4.tcp_fin_timeout: '15'
-          net.core.somaxconn: '4096'
-          net.ipv4.tcp_max_syn_backlog: '8192'
-          net.ipv4.tcp_window_scaling: '1'
-          net.ipv4.tcp_fastopen: '3'
-          net.ipv4.tcp_rmem: '16384 262144 1048576'
-          net.ipv4.tcp_wmem: '16384 262144 1048576'
-          net.ipv4.tcp_notsent_lowat: '4096'
-          net.core.rmem_default: '262144'
-          net.core.wmem_default: '262144'
-          net.core.wmem_max: '67108864'
-          net.core.rmem_max: '67108864'
         volumes:
           - /srv/backhaul/config.toml:/app/config.toml:ro
           - /srv/backhaul/server.crt:/root/server.crt:ro
@@ -85,21 +70,6 @@
         network_mode: host
         env:
           BACKHAUL_CONFIG: 'config.toml'
-        sysctls:
-          net.ipv4.ip_local_port_range: '1024 65535'
-          net.ipv4.tcp_tw_reuse: '1'
-          net.ipv4.tcp_fin_timeout: '15'
-          net.core.somaxconn: '4096'
-          net.ipv4.tcp_max_syn_backlog: '8192'
-          net.ipv4.tcp_window_scaling: '1'
-          net.ipv4.tcp_fastopen: '3'
-          net.ipv4.tcp_rmem: '16384 262144 1048576'
-          net.ipv4.tcp_wmem: '16384 262144 1048576'
-          net.ipv4.tcp_notsent_lowat: '4096'
-          net.core.rmem_default: '262144'
-          net.core.wmem_default: '262144'
-          net.core.wmem_max: '67108864'
-          net.core.rmem_max: '67108864'
         volumes:
           - /srv/backhaul/config.toml:/app/config.toml:ro
       when: not (backhaul_mode == 'server' and backhaul_transport in ['wss', 'wssmux'])
