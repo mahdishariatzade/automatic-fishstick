@@ -27,11 +27,21 @@
         dest: /srv/backhaul/config.toml
       tags: render_config
 
+    - name: Install OpenSSL if not present
+      become: true
+      ansible.builtin.package:
+        name: openssl
+        state: present
+      tags: install_openssl
+
     - name: Generate self-signed SSL certificate
       shell: |
-        openssl req -x509 -newkey rsa:2048 -keyout /srv/backhaul/key.pem -out /srv/backhaul/cert.pem -days 365 -nodes -subj "/CN=localhost"
+        openssl genpkey -algorithm RSA -out /srv/backhaul/server.key -pkeyopt rsa_keygen_bits:2048
+        openssl req -new -key /srv/backhaul/server.key -out /srv/backhaul/server.csr -subj "/C=US/ST=State/L=City/O=Organization/OU=Unit/CN={{ ansible_host | default('localhost') }}/emailAddress=blckht.49@gmail.com"
+        openssl x509 -req -in /srv/backhaul/server.csr -signkey /srv/backhaul/server.key -out /srv/backhaul/server.crt -days 365
+        rm /srv/backhaul/server.csr  # Clean up CSR file
       args:
-        creates: /srv/backhaul/cert.pem
+        creates: /srv/backhaul/server.crt
       when: backhaul_mode == 'server' and backhaul_transport in ['wss', 'wssmux']
       tags: generate_ssl
 
@@ -43,8 +53,8 @@
         restart_policy: unless-stopped
         volumes:
           - /srv/backhaul/config.toml:/app/config.toml:ro
-          - /srv/backhaul/cert.pem:/root/server.crt:ro
-          - /srv/backhaul/key.pem:/root/server.key:ro
+          - /srv/backhaul/server.crt:/root/server.crt:ro
+          - /srv/backhaul/server.key:/root/server.key:ro
       when: backhaul_mode == 'server' and backhaul_transport in ['wss', 'wssmux']
       tags: run_container_ssl
 
