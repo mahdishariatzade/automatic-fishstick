@@ -1,0 +1,15 @@
+[client]
+remote_addr = "{{ remote_addr | default('0.0.0.0:8080') }}"
+edge_ip = "{{ edge_ip | default('') }}"
+transport = "ws"
+token = "{{ token | default('your_token') }}"
+connection_pool = {{ connection_pool | default(8) }}
+aggressive_pool = {{ aggressive_pool | default(false) }}
+keepalive_period = {{ keepalive_period | default(75) }}
+dial_timeout = {{ dial_timeout | default(10) }}
+retry_interval = {{ retry_interval | default(3) }}
+nodelay = {{ nodelay | default(true) }}
+sniffer = {{ sniffer | default(false) }}
+web_port = {{ web_port | default(2060) }}
+sniffer_log = "{{ sniffer_log | default('/root/backhaul.json') }}"
+log_level = "{{ log_level | default('info') }}" 

@@ -1,0 +1,11 @@
+[server]
+bind_addr = "{{ bind_addr | default('0.0.0.0:3080') }}"
+transport = "udp"
+token = "{{ token | default('your_token') }}"
+heartbeat = {{ heartbeat | default(20) }}
+channel_size = {{ channel_size | default(2048) }}
+sniffer = {{ sniffer | default(false) }}
+web_port = {{ web_port | default(2060) }}
+sniffer_log = "{{ sniffer_log | default('/root/backhaul.json') }}"
+log_level = "{{ log_level | default('info') }}"
+ports = {{ ports | default([]) | tojson }} 

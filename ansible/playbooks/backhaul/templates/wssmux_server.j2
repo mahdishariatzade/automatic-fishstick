@@ -1,0 +1,20 @@
+[server]
+bind_addr = "{{ bind_addr | default('0.0.0.0:443') }}"
+transport = "wssmux"
+token = "{{ token | default('your_token') }}"
+keepalive_period = {{ keepalive_period | default(75) }}
+nodelay = {{ nodelay | default(true) }}
+heartbeat = {{ heartbeat | default(40) }}
+channel_size = {{ channel_size | default(2048) }}
+mux_con = {{ mux_con | default(8) }}
+mux_version = {{ mux_version | default(1) }}
+mux_framesize = {{ mux_framesize | default(32768) }}
+mux_recievebuffer = {{ mux_recievebuffer | default(4194304) }}
+mux_streambuffer = {{ mux_streambuffer | default(65536) }}
+tls_cert = "{{ tls_cert | default('/root/server.crt') }}"
+tls_key = "{{ tls_key | default('/root/server.key') }}"
+sniffer = {{ sniffer | default(false) }}
+web_port = {{ web_port | default(2060) }}
+sniffer_log = "{{ sniffer_log | default('/root/backhaul.json') }}"
+log_level = "{{ log_level | default('info') }}"
+ports = {{ ports | default([]) | tojson }} 
