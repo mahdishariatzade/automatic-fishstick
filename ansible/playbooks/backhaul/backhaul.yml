@@ -52,6 +52,7 @@
         state: started
         restart_policy: unless-stopped
         network_mode: host
+        privileged: true
         env:
           BACKHAUL_CONFIG: 'config.toml'
         volumes:
@@ -68,6 +69,7 @@
         state: started
         restart_policy: unless-stopped
         network_mode: host
+        privileged: true
         env:
           BACKHAUL_CONFIG: 'config.toml'
         volumes:
