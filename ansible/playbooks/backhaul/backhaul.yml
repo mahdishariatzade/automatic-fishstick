@@ -4,6 +4,11 @@
   become: true # Run with elevated privileges if needed for Docker
 
   tasks:
+    - name: Debug backhaul_mode
+      debug:
+        msg: "Host {{ inventory_hostname }} has backhaul_mode = {{ backhaul_mode | default('undefined') }}"
+      tags: debug
+
     - name: Pull the backhaul_tunnel image
       community.docker.docker_image:
         name: ghcr.io/mahdishariatzade/backhaul_tunnel:latest
