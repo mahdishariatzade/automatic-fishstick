@@ -3,10 +3,6 @@
   hosts: all
   become: true # Run with elevated privileges if needed for Docker
 
-  vars:
-    backhaul_transport: tcp
-    backhaul_mode: server
-
   tasks:
     - name: Pull the backhaul_tunnel image
       community.docker.docker_image:
