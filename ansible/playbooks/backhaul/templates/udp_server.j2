@@ -1,11 +1,11 @@
 [server]
-bind_addr = "{{ backhaul_vars.udp.server.bind_addr | default('0.0.0.0:3080') }}"
+bind_addr = "{{ backhaul_vars.server_common.bind_addr | default('0.0.0.0:3080') }}"
 transport = "udp"
 token = "{{ backhaul_vars.common.token | default('your_token') }}"
-heartbeat = {{ backhaul_vars.udp.server.heartbeat | default(20) }}
-channel_size = {{ backhaul_vars.udp.server.channel_size | default(2048) }}
+heartbeat = {{ backhaul_vars.server_common.heartbeat | default(40) }}
+channel_size = {{ backhaul_vars.server_common.channel_size | default(1024) }}
 sniffer = {{ backhaul_vars.common.sniffer | default(false) | string | lower }}
 web_port = {{ backhaul_vars.common.web_port | default(2060) }}
 sniffer_log = "{{ backhaul_vars.common.sniffer_log | default('/root/backhaul.json') }}"
 log_level = "{{ backhaul_vars.common.log_level | default('info') }}"
-ports = {{ backhaul_vars.udp.server.ports | default([]) | tojson }} 
+ports = {{ backhaul_vars.server_common.ports | default([]) | tojson }} 

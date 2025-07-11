@@ -2,7 +2,7 @@
 remote_addr = "{{ backhaul_vars.client_common.remote_addr | default('0.0.0.0:3080') }}"
 transport = "tcp"
 token = "{{ backhaul_vars.common.token | default('your_token') }}"
-connection_pool = {{ backhaul_vars.client_common.connection_pool | default(8) }}
+connection_pool = {{ backhaul_vars.client_common.connection_pool | default(50) }}
 aggressive_pool = {{ backhaul_vars.client_common.aggressive_pool | default(false) | string | lower }}
 keepalive_period = {{ backhaul_vars.client_common.keepalive_period | default(75) }}
 dial_timeout = {{ backhaul_vars.client_common.dial_timeout | default(10) }}

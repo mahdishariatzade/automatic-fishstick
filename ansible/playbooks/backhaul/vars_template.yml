@@ -41,84 +41,33 @@ backhaul_vars:
       mux_recievebuffer: 8388608
       mux_streambuffer: 524288
   udp:
-    server:
-      bind_addr: '0.0.0.0:3080'
-      heartbeat: 20
-      channel_size: 2048
-      ports: []
-    client:
-      remote_addr: '0.0.0.0:3080'
-      connection_pool: 8
-      aggressive_pool: false
-      retry_interval: 3
+    server: {}
+    client: {}
   ws:
-    server:
-      bind_addr: '0.0.0.0:8080'
-      channel_size: 2048
-      keepalive_period: 75
-      heartbeat: 40
-      nodelay: true
-      ports: []
+    server: {}
     client:
-      remote_addr: '0.0.0.0:8080'
       edge_ip: ''
-      connection_pool: 8
-      aggressive_pool: false
-      keepalive_period: 75
-      dial_timeout: 10
-      retry_interval: 3
-      nodelay: true
   wss:
     server:
-      bind_addr: '0.0.0.0:8443'
-      channel_size: 2048
-      keepalive_period: 75
-      nodelay: true
       tls_cert: '/root/server.crt'
       tls_key: '/root/server.key'
-      ports: []
     client:
-      remote_addr: '0.0.0.0:8443'
       edge_ip: ''
-      connection_pool: 8
-      aggressive_pool: false
-      keepalive_period: 75
-      dial_timeout: 10
-      retry_interval: 3
-      nodelay: true
   wsmux:
     server:
-      bind_addr: '0.0.0.0:3080'
-      keepalive_period: 75
-      nodelay: true
-      heartbeat: 40
-      channel_size: 1024
       mux_con: 20
       mux_version: 1
       mux_framesize: 32768
       mux_recievebuffer: 8388608
       mux_streambuffer: 524288
-      ports: []
     client:
-      remote_addr: '0.0.0.0:3080'
       edge_ip: ''
-      connection_pool: 50
-      aggressive_pool: false
-      keepalive_period: 75
-      dial_timeout: 10
-      nodelay: true
-      retry_interval: 3
       mux_version: 1
       mux_framesize: 32768
       mux_recievebuffer: 8388608
       mux_streambuffer: 524288
   wssmux:
     server:
-      bind_addr: '0.0.0.0:443'
-      keepalive_period: 75
-      nodelay: true
-      heartbeat: 40
-      channel_size: 1024
       mux_con: 20
       mux_version: 1
       mux_framesize: 32768
@@ -126,16 +75,8 @@ backhaul_vars:
       mux_streambuffer: 524288
       tls_cert: '/root/server.crt'
       tls_key: '/root/server.key'
-      ports: []
     client:
-      remote_addr: '0.0.0.0:443'
       edge_ip: ''
-      keepalive_period: 75
-      dial_timeout: 10
-      nodelay: true
-      retry_interval: 3
-      connection_pool: 50
-      aggressive_pool: false
       mux_version: 1
       mux_framesize: 32768
       mux_recievebuffer: 8388608

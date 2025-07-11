@@ -1,14 +1,14 @@
 [client]
-remote_addr = "{{ backhaul_vars.wssmux.client.remote_addr | default('0.0.0.0:443') }}"
+remote_addr = "{{ backhaul_vars.client_common.remote_addr | default('0.0.0.0:3080') }}"
 edge_ip = "{{ backhaul_vars.wssmux.client.edge_ip | default('') }}"
 transport = "wssmux"
 token = "{{ backhaul_vars.common.token | default('your_token') }}"
-keepalive_period = {{ backhaul_vars.wssmux.client.keepalive_period | default(75) }}
-dial_timeout = {{ backhaul_vars.wssmux.client.dial_timeout | default(10) }}
-nodelay = {{ backhaul_vars.wssmux.client.nodelay | default(true) | string | lower }}
-retry_interval = {{ backhaul_vars.wssmux.client.retry_interval | default(3) }}
-connection_pool = {{ backhaul_vars.wssmux.client.connection_pool | default(50) }}
-aggressive_pool = {{ backhaul_vars.wssmux.client.aggressive_pool | default(false) | string | lower }}
+keepalive_period = {{ backhaul_vars.client_common.keepalive_period | default(75) }}
+dial_timeout = {{ backhaul_vars.client_common.dial_timeout | default(10) }}
+nodelay = {{ backhaul_vars.client_common.nodelay | default(true) | string | lower }}
+retry_interval = {{ backhaul_vars.client_common.retry_interval | default(3) }}
+connection_pool = {{ backhaul_vars.client_common.connection_pool | default(50) }}
+aggressive_pool = {{ backhaul_vars.client_common.aggressive_pool | default(false) | string | lower }}
 mux_version = {{ backhaul_vars.wssmux.client.mux_version | default(1) }}
 mux_framesize = {{ backhaul_vars.wssmux.client.mux_framesize | default(32768) }}
 mux_recievebuffer = {{ backhaul_vars.wssmux.client.mux_recievebuffer | default(8388608) }}

@@ -1,11 +1,11 @@
 [server]
-bind_addr = "{{ backhaul_vars.wssmux.server.bind_addr | default('0.0.0.0:443') }}"
+bind_addr = "{{ backhaul_vars.server_common.bind_addr | default('0.0.0.0:3080') }}"
 transport = "wssmux"
 token = "{{ backhaul_vars.common.token | default('your_token') }}"
-keepalive_period = {{ backhaul_vars.wssmux.server.keepalive_period | default(75) }}
-nodelay = {{ backhaul_vars.wssmux.server.nodelay | default(true) | string | lower }}
-heartbeat = {{ backhaul_vars.wssmux.server.heartbeat | default(40) }}
-channel_size = {{ backhaul_vars.wssmux.server.channel_size | default(1024) }}
+keepalive_period = {{ backhaul_vars.server_common.keepalive_period | default(75) }}
+nodelay = {{ backhaul_vars.server_common.nodelay | default(true) | string | lower }}
+heartbeat = {{ backhaul_vars.server_common.heartbeat | default(40) }}
+channel_size = {{ backhaul_vars.server_common.channel_size | default(1024) }}
 mux_con = {{ backhaul_vars.wssmux.server.mux_con | default(20) }}
 mux_version = {{ backhaul_vars.wssmux.server.mux_version | default(1) }}
 mux_framesize = {{ backhaul_vars.wssmux.server.mux_framesize | default(32768) }}
@@ -17,4 +17,4 @@ sniffer = {{ backhaul_vars.common.sniffer | default(false) | string | lower }}
 web_port = {{ backhaul_vars.common.web_port | default(2060) }}
 sniffer_log = "{{ backhaul_vars.common.sniffer_log | default('/root/backhaul.json') }}"
 log_level = "{{ backhaul_vars.common.log_level | default('info') }}"
-ports = {{ backhaul_vars.wssmux.server.ports | default([]) | tojson }} 
+ports = {{ backhaul_vars.server_common.ports | default([]) | tojson }} 
