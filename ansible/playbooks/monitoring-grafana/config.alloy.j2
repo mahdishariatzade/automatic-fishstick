@@ -119,7 +119,8 @@ loki.process "drop_old_logs" {
 
 loki.write "default" {
     external_labels = {
-        hostname = string.trim_space(local.file.hostname.content),
+        instance = string.trim_space(local.file.hostname.content),
+        host = string.trim_space(local.file.hostname.content),
     }
     endpoint {
         url = {{ loki_url }}
