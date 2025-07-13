@@ -1,0 +1,139 @@
+livedebugging {
+  enabled = {{ livedebugging_enabled | default(false) }}
+}
+
+local.file "hostname" {
+    filename = "/etc/hostname"
+    is_secret = false
+}
+
+/////////////////////////////////////////////// node_exporter => machine_METRICS + node_METRICS /////////////////////////////////////////////
+{% if prometheus_enabled | default(true) %}
+prometheus.exporter.unix "node_exporter" { 
+  procfs_path = "/host/proc"
+  rootfs_path = "/host/rootfs"
+  sysfs_path = "/host/sys"
+  udev_data_path = "/host/run/udev/data"
+}
+// Set instance label for node_exporter
+discovery.relabel "node_exporter" {
+  targets = prometheus.exporter.unix.node_exporter.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = string.trim_space(local.file.hostname.content)
+  }
+  rule {
+    target_label = "job"
+    replacement  = "integrations/node_exporter"
+  }
+}
+prometheus.scrape "node_exporter_scrape" {
+  targets    = discovery.relabel.node_exporter.output
+  forward_to = [ prometheus.remote_write.default.receiver ]
+  
+  scrape_interval= "10s"
+}
+{% endif %}
+
+{% if cadvisor_enabled | default(true) %}
+/////////////////////////////////////////////// cadvisor => container_METRICS /////////////////////////////////////////////
+prometheus.exporter.cadvisor "cadvisor" {}
+// Set labels for cadvisor
+discovery.relabel "cadvisor" {
+  targets = prometheus.exporter.cadvisor.cadvisor.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = string.trim_space(local.file.hostname.content)
+  }
+  rule {
+    target_label = "job"
+    replacement  = "integrations/cadvisor"
+  }
+}
+prometheus.scrape "scraper" {
+  targets    = discovery.relabel.cadvisor.output
+  forward_to = [ prometheus.remote_write.default.receiver ]
+  scrape_interval = "10s"
+}
+prometheus.remote_write "default" {
+  external_labels = {
+    hostname = string.trim_space(local.file.hostname.content),
+    host = string.trim_space(local.file.hostname.content),
+  }
+  endpoint {
+    url = {{ prometheus_url }}
+    basic_auth {
+      username = {{ prometheus_username }}
+      password = {{ prometheus_password }}
+    }
+  }
+}
+{% endif %}
+
+{% if loki_enabled | default(true) %}
+/////////////////////////////////////////////// logs /////////////////////////////////////////////
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "logs_integrations_docker" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex = "/(.*)"
+    target_label = "container_name"
+    }
+}
+
+loki.relabel "relabel_logs" {
+    forward_to = []
+  rule {
+    regex = "__meta_docker_container_label_com_(.*)"
+    action = "labelmap"
+  }
+}
+
+
+loki.source.docker "container_logs" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.logs_integrations_docker.output
+  labels     = {"platform" = "docker"}
+  relabel_rules    = loki.relabel.relabel_logs.rules
+  forward_to = [loki.process.drop_old_logs.receiver]
+}
+loki.process "drop_old_logs" {
+    forward_to = [loki.write.default.receiver]
+
+    stage.docker {}
+
+    stage.drop {
+    older_than = "120h"
+    drop_counter_reason = "too old"
+    }
+}
+
+
+
+loki.write "default" {
+    external_labels = {
+        hostname = string.trim_space(local.file.hostname.content),
+    }
+    endpoint {
+        url = {{ loki_url }}
+        basic_auth {
+            username = {{ loki_username }}
+            password = {{ loki_password }}
+        }
+    }
+}
+{% endif %}
+
+{% if logging_enabled | default(true) %}
+logging {
+  level = "info"
+  format = "logfmt"
+}
+{% endif %}

@@ -1,0 +1,56 @@
+---
+- name: Deploy Grafana Alloy Container
+  hosts: all
+  become: true
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Create directory for Alloy
+      file:
+        path: /opt/alloy
+        state: directory
+        mode: '0755'
+
+    - name: Template Alloy config
+      template:
+        src: config.alloy.j2
+        dest: /opt/alloy/conf.alloy
+        mode: '0644'
+      register: alloy_config_changed
+
+
+    - name: Run Alloy Docker container
+      community.docker.docker_container:
+        name: alloy
+        image: grafana/alloy:latest
+        state: started
+        restart_policy: unless-stopped
+        volumes:
+          - /:/host/rootfs:ro
+
+          - /opt/alloy/conf.alloy:/etc/alloy/config.alloy:ro
+
+          - /etc/hostname:/etc/hostname:ro
+
+          - /var/run:/var/run:ro
+          - /var/run/docker.sock:/var/run/docker.sock
+          - /var/lib/docker/:/var/lib/docker:ro
+
+          - /proc:/host/proc:ro
+
+          - /sys:/host/sys:ro
+
+          - /run/udev/data:/host/run/udev/data:ro
+        ports:
+          - '127.0.0.1:12345:12345'
+        command:
+          - run
+          - --server.http.listen-addr=0.0.0.0:12345
+          - --storage.path=/var/lib/alloy/data
+          - /etc/alloy/config.alloy
+        cap_add:
+          - SYS_TIME
+        uts: host
+        cpu_shares: 512 # Approximate for 0.5 CPUs
+        memory: 512M
