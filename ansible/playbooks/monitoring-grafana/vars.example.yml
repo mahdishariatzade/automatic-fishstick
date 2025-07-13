@@ -1,0 +1,21 @@
+# Live Debugging
+livedebugging_enabled: false
+# features
+prometheus_enabled: true
+cadvisor_enabled: true
+loki_enabled: true
+logging_enabled: true
+
+# Prometheus credentials
+prometheus_url: 'http://example.com/prometheus'
+
+prometheus_username: 'username'
+
+prometheus_password: 'password'
+
+# Loki credentials
+loki_url: 'http://example.com/loki'
+
+loki_username: 'username'
+
+loki_password: 'password'
