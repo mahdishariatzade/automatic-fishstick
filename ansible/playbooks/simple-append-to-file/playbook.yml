@@ -1,0 +1,27 @@
+---
+- name: Simple Append to File
+  hosts: all
+  become: true
+  # vars:
+  #   file_addr: /path/to/your/file.txt # Replace with actual file path
+  #   content: 'Your content to append' # Replace with actual content
+
+  tasks:
+    - name: Ensure directory exists
+      ansible.builtin.file:
+        path: '{{ file_addr | dirname }}'
+        state: directory
+        mode: '0755'
+
+    - name: Ensure file exists
+      ansible.builtin.file:
+        path: '{{ file_addr }}'
+        state: touch
+        mode: '0644'
+
+    - name: Append content to the end of the file
+      ansible.builtin.lineinfile:
+        path: '{{ file_addr }}'
+        line: '{{ content }}'
+        insertafter: EOF
+        state: present
