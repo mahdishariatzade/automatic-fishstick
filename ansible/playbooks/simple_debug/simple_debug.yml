@@ -1,6 +1,6 @@
 ---
 - name: Simple Debug Playbook
-  hosts: localhost
+  hosts: all
   gather_facts: yes
 
   # vars:
