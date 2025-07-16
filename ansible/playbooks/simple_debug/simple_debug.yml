@@ -1,0 +1,11 @@
+---
+- name: Simple Debug Playbook
+  hosts: localhost
+  gather_facts: yes
+
+  # vars:
+  #   variable: 'Hello, World!'
+  tasks:
+    - name: Debug a simple variable
+      debug:
+        var: variable
