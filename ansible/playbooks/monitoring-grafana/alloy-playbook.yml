@@ -49,8 +49,8 @@
           - --server.http.listen-addr=0.0.0.0:12345
           - --storage.path=/var/lib/alloy/data
           - /etc/alloy/config.alloy
-        cap_add:
-          - SYS_TIME
+        capabilities:
+            - SYS_TIME
         uts: host
         cpu_shares: 512 # Approximate for 0.5 CPUs
         memory: 512M
