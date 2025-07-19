@@ -17,7 +17,7 @@
           runner_type: 'instance_type'
           description: '{{ runner_name }}'
           tag_list: '{{ runner_tags }}'
-          run_untagged: true
+          run_untagged: '{{ run_untagged | default(true) }}'
         status_code: 201
         use_proxy: true
       register: runner_response
@@ -32,7 +32,7 @@
     - name: Create runner config directory on runner host
       become: true
       file:
-        path: /srv/gitlab-runner/config
+        path: '{{ config_path }}'
         state: directory
         mode: '0755'
 
@@ -42,7 +42,7 @@
         - create_config
       ansible.builtin.template:
         src: templates/config.toml.j2
-        dest: /srv/gitlab-runner/config/config.toml
+        dest: '{{ config_path }}/{{ config_file }}'
         force: '{{ recreate_config_file | default(false)}}'
 
     - name: Run GitLab Runner container
@@ -57,4 +57,4 @@
         restart_policy: always
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
-          - /srv/gitlab-runner/config:/etc/gitlab-runner
+          - '{{ config_path }}:/etc/gitlab-runner'
