@@ -16,6 +16,7 @@
       template:
         src: config.alloy.j2
         dest: /opt/alloy/conf.alloy
+        force: '{{ replace_config | default(false) }}'
         mode: '0644'
       register: alloy_config_changed
 
@@ -50,7 +51,7 @@
           - --storage.path=/var/lib/alloy/data
           - /etc/alloy/config.alloy
         capabilities:
-            - SYS_TIME
+          - SYS_TIME
         uts: host
         cpu_shares: 512 # Approximate for 0.5 CPUs
         memory: 512M
