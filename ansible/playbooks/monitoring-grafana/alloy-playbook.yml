@@ -21,7 +21,7 @@
 
     - name: Run Alloy Docker container
       community.docker.docker_container:
-        name: {{ container_name | default('alloy') }}
+        name: "{{ container_name | default('alloy') }}"
         image: grafana/alloy:latest
         state: started
         restart: '{{ alloy_config_changed.changed or force_restart | default(false) }}'
