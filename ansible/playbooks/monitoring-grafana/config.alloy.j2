@@ -1,5 +1,5 @@
 livedebugging {
-  enabled = {{ livedebugging_enabled | default(false) }}
+  enabled = {{ livedebugging_enabled | default(false) | lower }}
 }
 
 local.file "hostname" {
