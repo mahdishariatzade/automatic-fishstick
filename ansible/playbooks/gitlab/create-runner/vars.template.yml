@@ -1,12 +1,13 @@
 ---
 gitlab_url: 'https://your-gitlab-instance.com'
 gitlab_access_token: 'your_personal_access_token'
+# runner_token:
 runner_image: 'gitlab/gitlab-runner:latest'
 runner_name: 'docker-runner-{{ inventory_hostname }}'
 runner_tags: '{{ inventory_hostname }}'
 config_path: /srv/gitlab-runner/config
 config_file: config.toml
-# runner_token: 
+environment_vars: []
 # concurrent: 5
 # helper_image: 
 # recreate_config_file: true

@@ -6,6 +6,7 @@ check_interval = 0
   url = "{{ gitlab_url }}"
   token = "{{ runner_token }}"
   executor = "docker"
+  environment = {{ environment_vars | default([]) | to_json }}
   [runners.custom_build_dir]
   [runners.cache]
       MaxUploadedArchiveSize = 0
