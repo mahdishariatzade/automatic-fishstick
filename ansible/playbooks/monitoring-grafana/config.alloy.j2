@@ -62,10 +62,10 @@ prometheus.remote_write "default" {
     hostname = "{{ instance_name | trim }}",
   }
   endpoint {
-    url = {{ prometheus_url }}
+    url = "{{ prometheus_url }}"
     basic_auth {
-      username = {{ prometheus_username }}
-      password = {{ prometheus_password }}
+      username = "{{ prometheus_username }}"
+      password = "{{ prometheus_password }}"
     }
   }
 }
@@ -124,8 +124,8 @@ loki.write "default" {
     endpoint {
         url = {{ loki_url }}
         basic_auth {
-            username = {{ loki_username }}
-            password = {{ loki_password }}
+            username = "{{ loki_username }}"
+            password = "{{ loki_password }}"
         }
     }
 }
