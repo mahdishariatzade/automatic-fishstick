@@ -31,6 +31,8 @@
 
     - name: Create runner config directory on runner host
       become: true
+      tags:
+        - create_config_dir
       file:
         path: '{{ config_path }}'
         state: directory
