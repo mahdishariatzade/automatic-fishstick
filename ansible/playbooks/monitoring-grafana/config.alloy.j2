@@ -21,7 +21,7 @@ discovery.relabel "node_exporter" {
 
   rule {
     target_label = "instance"
-    replacement  = string.trim_space(local.file.hostname.content)
+    replacement  = {{ instance_name | trim }}
   }
   rule {
     target_label = "job"
@@ -45,7 +45,7 @@ discovery.relabel "cadvisor" {
 
   rule {
     target_label = "instance"
-    replacement  = string.trim_space(local.file.hostname.content)
+    replacement  = {{ instance_name | trim }}
   }
   rule {
     target_label = "job"
@@ -59,8 +59,7 @@ prometheus.scrape "scraper" {
 }
 prometheus.remote_write "default" {
   external_labels = {
-    hostname = string.trim_space(local.file.hostname.content),
-    host = string.trim_space(local.file.hostname.content),
+    hostname = {{ instance_name | trim }},
   }
   endpoint {
     url = {{ prometheus_url }}
@@ -119,8 +118,8 @@ loki.process "drop_old_logs" {
 
 loki.write "default" {
     external_labels = {
-        instance = string.trim_space(local.file.hostname.content),
-        host = string.trim_space(local.file.hostname.content),
+        instance = {{ instance_name | trim }},
+        hostname = string.trim_space(local.file.hostname.content),
     }
     endpoint {
         url = {{ loki_url }}

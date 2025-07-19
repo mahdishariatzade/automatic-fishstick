@@ -19,12 +19,12 @@
         mode: '0644'
       register: alloy_config_changed
 
-
     - name: Run Alloy Docker container
       community.docker.docker_container:
-        name: alloy
+        name: {{ container_name | default('alloy') }}
         image: grafana/alloy:latest
         state: started
+        restart: '{{ alloy_config_changed.changed or force_restart | default(false) }}'
         restart_policy: unless-stopped
         volumes:
           - /:/host/rootfs:ro
@@ -43,7 +43,7 @@
 
           - /run/udev/data:/host/run/udev/data:ro
         ports:
-          - '127.0.0.1:12345:12345'
+          - '127.0.0.1:12345:12345' # for debug
         command:
           - run
           - --server.http.listen-addr=0.0.0.0:12345
