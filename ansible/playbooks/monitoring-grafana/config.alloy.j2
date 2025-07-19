@@ -21,7 +21,7 @@ discovery.relabel "node_exporter" {
 
   rule {
     target_label = "instance"
-    replacement  = {{ instance_name | trim }}
+    replacement  = "{{ instance_name | trim }}"
   }
   rule {
     target_label = "job"
@@ -45,7 +45,7 @@ discovery.relabel "cadvisor" {
 
   rule {
     target_label = "instance"
-    replacement  = {{ instance_name | trim }}
+    replacement  = "{{ instance_name | trim }}"
   }
   rule {
     target_label = "job"
@@ -59,7 +59,7 @@ prometheus.scrape "scraper" {
 }
 prometheus.remote_write "default" {
   external_labels = {
-    hostname = {{ instance_name | trim }},
+    hostname = "{{ instance_name | trim }}",
   }
   endpoint {
     url = {{ prometheus_url }}
@@ -118,7 +118,7 @@ loki.process "drop_old_logs" {
 
 loki.write "default" {
     external_labels = {
-        instance = {{ instance_name | trim }},
+        instance = "{{ instance_name | trim }}",
         hostname = string.trim_space(local.file.hostname.content),
     }
     endpoint {
