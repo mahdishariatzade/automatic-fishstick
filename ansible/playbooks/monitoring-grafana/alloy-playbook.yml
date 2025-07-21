@@ -27,6 +27,8 @@
         state: started
         restart: '{{ alloy_config_changed.changed or force_restart | default(false) }}'
         restart_policy: unless-stopped
+        security_opts:
+          - apparmor=unconfined
         volumes:
           - /:/rootfs:ro
           - /var/run:/var/run:ro
