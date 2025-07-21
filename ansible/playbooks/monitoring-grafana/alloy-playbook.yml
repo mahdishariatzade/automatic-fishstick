@@ -28,21 +28,17 @@
         restart: '{{ alloy_config_changed.changed or force_restart | default(false) }}'
         restart_policy: unless-stopped
         volumes:
-          - /:/host/rootfs:ro
+          - /:/rootfs:ro
+          - /var/run:/var/run:ro
+          - /sys:/sys:ro
+          - /var/lib/docker/:/var/lib/docker:ro
 
           - /opt/alloy/conf.alloy:/etc/alloy/config.alloy:ro
 
           - /etc/hostname:/etc/hostname:ro
 
-          - /var/run:/var/run:ro
-          - /var/run/docker.sock:/var/run/docker.sock
-          - /var/lib/docker/:/var/lib/docker:ro
-
-          - /proc:/host/proc:ro
-
-          - /sys:/host/sys:ro
-
-          - /run/udev/data:/host/run/udev/data:ro
+          - /proc:/proc:ro
+          - /run/udev/data:/run/udev/data:ro
         ports:
           - '127.0.0.1:12345:12345' # for debug
         command:
