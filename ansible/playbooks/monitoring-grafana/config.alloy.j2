@@ -10,9 +10,9 @@ local.file "hostname" {
 /////////////////////////////////////////////// node_exporter => machine_METRICS + node_METRICS /////////////////////////////////////////////
 {% if prometheus_enabled | default(true) %}
 prometheus.exporter.unix "node_exporter" { 
-  procfs_path = "/proc"
+  procfs_path = "/host/proc"
   rootfs_path = "/rootfs"
-  sysfs_path = "/sys"
+  sysfs_path = "/host/sys"
   udev_data_path = "/run/udev/data"
 }
 // Set instance label for node_exporter

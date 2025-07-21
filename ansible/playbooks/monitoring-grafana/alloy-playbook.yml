@@ -27,19 +27,17 @@
         state: started
         restart: '{{ alloy_config_changed.changed or force_restart | default(false) }}'
         restart_policy: unless-stopped
-        security_opts:
-          - apparmor=unconfined
         volumes:
           - /:/rootfs:ro
           - /var/run:/var/run:ro
-          - /sys:/sys:ro
+          - /sys:/host/sys:ro
           - /var/lib/docker/:/var/lib/docker:ro
 
           - /opt/alloy/conf.alloy:/etc/alloy/config.alloy:ro
 
           - /etc/hostname:/etc/hostname:ro
 
-          - /proc:/proc:ro
+          - /proc:/host/proc:ro
           - /run/udev/data:/run/udev/data:ro
         ports:
           - '127.0.0.1:12345:12345' # for debug
