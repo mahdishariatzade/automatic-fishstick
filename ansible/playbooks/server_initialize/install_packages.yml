@@ -7,12 +7,10 @@
 
   tasks:
     - block:
-        - name: Update apt cache (Debian/Ubuntu)
-          ansible.builtin.apt:
-            update_cache: true
         - name: Install proxychains package (Debian/Ubuntu)
           ansible.builtin.apt:
             name: proxychains
+            update_cache: yes
             state: present
       when: ansible_pkg_mgr == 'apt'
       tags:
