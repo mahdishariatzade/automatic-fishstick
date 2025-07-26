@@ -58,9 +58,7 @@
         # inotify descriptors. These values are conservative but well above
         # the defaults (soft/hard = 1024/4096).
         ulimits:
-          - name: nofile
-            soft: 65536
-            hard: 65536
+          - 'nofile:65536:65536'
         # inotify limits فقط برای این کانتینر
         sysctls:
           fs.inotify.max_user_instances: '1024'
