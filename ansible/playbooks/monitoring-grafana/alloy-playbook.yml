@@ -20,6 +20,17 @@
         mode: '0644'
       register: alloy_config_changed
 
+    - name: Ensure inotify limits are sufficient on host
+      sysctl:
+        name: '{{ item.name }}'
+        value: '{{ item.value }}'
+        state: present
+        reload: yes
+      loop:
+        - { name: 'fs.inotify.max_user_instances', value: '1024' }
+        - { name: 'fs.inotify.max_user_watches', value: '524288' }
+        - { name: 'fs.inotify.max_queued_events', value: '65536' }
+
     - name: Run Alloy Docker container
       community.docker.docker_container:
         name: "{{ container_name | default('alloy') }}"
@@ -59,8 +70,3 @@
         # the defaults (soft/hard = 1024/4096).
         ulimits:
           - 'nofile:65536:65536'
-        # inotify limits فقط برای این کانتینر
-        sysctls:
-          fs.inotify.max_user_instances: '1024'
-          fs.inotify.max_user_watches: '524288'
-          fs.inotify.max_queued_events: '65536'
