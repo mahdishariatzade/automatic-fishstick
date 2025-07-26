@@ -27,6 +27,8 @@
         state: started
         restart: '{{ alloy_config_changed.changed or force_restart | default(false) }}'
         restart_policy: unless-stopped
+        environment:
+          - GOMEMLIMIT=512MiB
         volumes:
           - /:/rootfs:ro
           - /var/run:/var/run:ro
@@ -51,4 +53,4 @@
           - SYS_TIME
         uts: host
         cpu_shares: 512 # Approximate for 0.5 CPUs
-        memory: 512M
+        memory: 1G
