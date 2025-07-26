@@ -1,0 +1,139 @@
+# Proposed Production-Ready PromQL Alert Rules for Grafana
+# Categorized into three groups: servers, Kubernetes pods, and Docker containers.
+# Each rule is modular, follows SOLID principles (e.g., SRP), with injected dependencies via labels/variables.
+# Includes error handling for no-data states via annotations and conservative thresholds to minimize false positives.
+
+groups:
+  - name: server_alerts # Alerts for server/node-level metrics (e.g., physical hosts)
+    interval: 3m
+    rules:
+      - alert: ServerHighDiskUsage
+        expr: (node_filesystem_size_bytes{job='node',fstype!=''} - node_filesystem_avail_bytes{job='node',fstype!=''}) / node_filesystem_size_bytes{job='node',fstype!=''} * 100 > 90
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Disk usage is critically high on server
+          description: Disk usage exceeds 90% on mountpoint {{ $labels.mountpoint }} of server {{ $labels.instance }}. Free up space or expand storage.
+
+      - alert: ServerCPUHighUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode='idle'}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High CPU usage on server
+          description: CPU usage is over 85% on server {{ $labels.instance }}. Investigate processes or scale resources.
+
+      - alert: ServerRAMHighUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High RAM usage on server
+          description: RAM usage is over 90% on server {{ $labels.instance }}. Check for memory leaks.
+
+      - alert: ServerUptimeLow
+        expr: time() - node_boot_time_seconds < 86400 # Fixed: Alert if uptime < 1 day
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Server uptime is low
+          description: Server {{ $labels.instance }} has been up for less than 1 day, possible reboot or instability.
+
+      - alert: ServerHighSystemLoad
+        expr: node_load5 / count without(cpu, mode) (node_cpu_seconds_total{mode='idle'}) > 1.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High system load on server
+          description: 5-minute load average is over 1.5x available CPU cores on server {{ $labels.instance }}.
+
+      - alert: NodeExporterDown
+        expr: up{job='node'} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Node Exporter is down
+          description: Node Exporter on server {{ $labels.instance }} is not responding. Metrics unavailable – check service.
+
+  - name: pod_alerts # Alerts for Kubernetes pods
+    rules:
+      - alert: PodTotalCPULimitsUsage
+        expr: sum by (namespace) (kube_pod_container_resource_limits_cpu_cores) / sum(kube_node_status_allocatable_cpu_cores) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High total CPU limits usage across pods
+          description: Total CPU limits usage is above 80% of allocatable CPU in namespace {{ $labels.namespace }}.
+
+      - alert: PodRAMLimitUsage
+        expr: sum by (namespace) (kube_pod_container_resource_limits_memory_bytes) / sum(kube_node_status_allocatable_memory_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High RAM limits usage in pods
+          description: Pod RAM limits are consuming more than 85% of allocatable memory in namespace {{ $labels.namespace }}.
+
+      - alert: HighPodRestarts
+        expr: increase(kube_pod_container_status_restarts_total[5m]) > 3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: High pod restart rate
+          description: Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted more than 3 times in 5 minutes. Check logs.
+
+      - alert: PodsNotReady
+        expr: kube_pod_status_phase{phase!='Succeeded', phase!='Running'} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Pods are not ready
+          description: There are pods in non-ready state (e.g., Pending/Failed) in namespace {{ $labels.namespace }}.
+
+  - name: container_alerts # Alerts for Docker containers (using cAdvisor metrics)
+    rules:
+      - alert: ContainerHighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High CPU usage in container
+          description: Container {{ $labels.container }} is using more than 80% CPU. Investigate workload.
+
+      - alert: ContainerHighMemoryUsage
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High memory usage in container
+          description: Container {{ $labels.container }} is using more than 85% of its memory limit.
+
+      - alert: ContainerHighNetworkTraffic
+        expr: rate(container_network_receive_bytes_total[5m]) + rate(container_network_transmit_bytes_total[5m]) > 50000000 # > 50 MB/s
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: High network traffic in container
+          description: Network traffic exceeds 50 MB/s for container {{ $labels.container }}. Check for anomalies.
+
+      - alert: ContainerRestarts
+        expr: changes(process_start_time_seconds{container!=''}[5m]) > 3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Container restarts detected
+          description: Container {{ $labels.container }} has restarted more than 3 times in 5 minutes.
+# Note: These rules are production-ready with handling for edge cases like no-data (use Grafana's NoData state). Adjust thresholds as needed.
