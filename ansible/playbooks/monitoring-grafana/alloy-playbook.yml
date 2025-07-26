@@ -54,3 +54,15 @@
         uts: host
         cpu_shares: 512 # Approximate for 0.5 CPUs
         memory: 1G
+        # Raise open-file limit inside the container so Alloy can create enough
+        # inotify descriptors. These values are conservative but well above
+        # the defaults (soft/hard = 1024/4096).
+        ulimits:
+          - name: nofile
+            soft: 65536
+            hard: 65536
+        # inotify limits فقط برای این کانتینر
+        sysctls:
+          fs.inotify.max_user_instances: '1024'
+          fs.inotify.max_user_watches: '524288'
+          fs.inotify.max_queued_events: '65536'
