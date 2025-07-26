@@ -21,15 +21,16 @@
       register: alloy_config_changed
 
     - name: Ensure inotify limits are sufficient on host
+      when: ansible_os_family == 'Debian' and (edit_sysctl | default(false))
       sysctl:
         name: '{{ item.name }}'
         value: '{{ item.value }}'
         state: present
         reload: yes
       loop:
-        - { name: 'fs.inotify.max_user_instances', value: '1024' }
-        - { name: 'fs.inotify.max_user_watches', value: '524288' }
-        - { name: 'fs.inotify.max_queued_events', value: '65536' }
+        - { name: 'fs.inotify.max_user_instances', value: '{{ inotify_max_user_instances | default(1024) }}' }
+        - { name: 'fs.inotify.max_user_watches', value: '{{ inotify_max_user_watches | default(524288) }}' }
+        - { name: 'fs.inotify.max_queued_events', value: '{{ inotify_max_queued_events | default(65536) }}' }
 
     - name: Run Alloy Docker container
       community.docker.docker_container:

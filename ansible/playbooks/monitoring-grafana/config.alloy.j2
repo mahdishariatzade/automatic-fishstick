@@ -95,6 +95,11 @@ loki.relabel "relabel_logs" {
     regex = "__meta_docker_container_label_com_(.*)"
     action = "labelmap"
   }
+  // Drop high-cardinality or unnecessary docker compose labels to stay under Loki's 15 label limit
+  rule {
+    action = "labeldrop"
+    regex  = "docker_compose_(config_hash|project_config_files|project_working_dir|replace)"
+  }
 }
 
 
