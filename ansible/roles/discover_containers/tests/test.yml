@@ -1,0 +1,17 @@
+---
+- hosts: localhost
+  remote_user: root
+  gather_facts: false
+  roles:
+    - role: discover_containers
+      vars:
+        name_filter: 
+          - mssql
+          - kind
+        label_filter: 
+          - "backup.mssql=true"
+          - "vendor=Microsoft"
+  tasks:
+    - name: debug09090
+      debug:
+        var: filtered_containers
