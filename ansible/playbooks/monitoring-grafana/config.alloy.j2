@@ -76,7 +76,7 @@ prometheus.remote_write "default" {
       password = "{{ prometheus_password }}"
     }
     queue_config {
-      capacity= 3000
+      capacity = {{ prometheus_queue_capacity | default(10000) }}
   }
 }
 {% endif %}
