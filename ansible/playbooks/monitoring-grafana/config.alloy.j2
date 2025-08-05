@@ -1,14 +1,18 @@
+// ---------------- GLOBAL ----------------
 livedebugging {
   enabled = {{ livedebugging_enabled | default(false) | lower }}
 }
+
+// ---------- LOCAL HELPERS ----------
 
 local.file "hostname" {
     filename = "/etc/hostname"
     is_secret = false
 }
 
-/////////////////////////////////////////////// node_exporter => machine_METRICS + node_METRICS /////////////////////////////////////////////
+
 {% if prometheus_enabled | default(true) %}
+// ---------- NODE / HOST METRICS ----------
 prometheus.exporter.unix "node_exporter" { 
   procfs_path = "/host/proc"
   rootfs_path = "/rootfs"
@@ -36,8 +40,10 @@ prometheus.scrape "node_exporter_scrape" {
 }
 {% endif %}
 
+
+
 {% if cadvisor_enabled | default(true) %}
-/////////////////////////////////////////////// cadvisor => container_METRICS /////////////////////////////////////////////
+// ---------- CADVISOR (Container) ----------
 prometheus.exporter.cadvisor "cadvisor" {
   store_container_labels = true
 }
@@ -69,12 +75,16 @@ prometheus.remote_write "default" {
       username = "{{ prometheus_username }}"
       password = "{{ prometheus_password }}"
     }
+    queue_config {
+      capacity= 3000
   }
 }
 {% endif %}
 
+
+
 {% if loki_enabled | default(true) %}
-/////////////////////////////////////////////// logs /////////////////////////////////////////////
+// ---------- LOGS ----------
 discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
 }
@@ -98,7 +108,7 @@ loki.relabel "relabel_logs" {
   // Drop high-cardinality or unnecessary docker compose labels to stay under Loki's 15 label limit
   rule {
     action = "labeldrop"
-    regex  = "docker_compose_(config_hash|project_config_files|project_working_dir|replace)"
+    regex  = "docker_compose_(config_hash|project_config_files|project_working_dir|replace|version|)"
   }
 }
 
