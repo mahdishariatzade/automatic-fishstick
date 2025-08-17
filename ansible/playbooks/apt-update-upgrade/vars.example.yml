@@ -12,3 +12,7 @@ run_dpkg_configure: true
 
 # Optionally run apt-get -f install before upgrade to fix broken deps
 apt_fix_broken_before_upgrade: false
+
+# Lock handling (seconds)
+apt_lock_timeout: 600
+force_unlock_apt: false
