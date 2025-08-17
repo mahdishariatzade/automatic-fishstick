@@ -1,0 +1,71 @@
+---
+- name: APT Update and Upgrade
+  hosts: all
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: APT maintenance on APT-based systems
+      block:
+        - name: Prevent service restarts during upgrade (policy-rc.d)
+          ansible.builtin.copy:
+            dest: /usr/sbin/policy-rc.d
+            mode: '0755'
+            content: |
+              #!/bin/sh
+              exit 101
+          when: prevent_service_restarts | default(true)
+
+        - name: Fix dpkg half-configured packages
+          ansible.builtin.command:
+            cmd: dpkg --configure -a
+          changed_when: false
+          when: run_dpkg_configure | default(true)
+
+        - name: Attempt to fix broken dependencies (optional)
+          ansible.builtin.command:
+            cmd: >-
+              apt-get -y -o Dpkg::Options::=--force-confdef
+              -o Dpkg::Options::=--force-confold -f install
+          changed_when: false
+          environment:
+            DEBIAN_FRONTEND: noninteractive
+          when: apt_fix_broken_before_upgrade | default(false)
+
+        - name: Update apt cache
+          ansible.builtin.apt:
+            update_cache: true
+          environment:
+            DEBIAN_FRONTEND: noninteractive
+            NEEDRESTART_MODE: 'l'
+
+        - name: Upgrade installed packages
+          ansible.builtin.apt:
+            upgrade: "{{ apt_upgrade_type }}"
+          environment:
+            DEBIAN_FRONTEND: noninteractive
+            NEEDRESTART_MODE: 'l'
+      rescue:
+        - name: Ensure policy-rc.d removed after failure
+          ansible.builtin.file:
+            path: /usr/sbin/policy-rc.d
+            state: absent
+          when: prevent_service_restarts | default(true)
+        - name: Fail with error after cleanup
+          ansible.builtin.fail:
+            msg: 'APT maintenance failed; policy-rc.d removed'
+      always:
+        - name: Remove policy-rc.d to restore normal behavior
+          ansible.builtin.file:
+            path: /usr/sbin/policy-rc.d
+            state: absent
+          when: prevent_service_restarts | default(true)
+      when: ansible_pkg_mgr == 'apt'
+      tags:
+        - apt
+        - update
+        - upgrade
+
+
