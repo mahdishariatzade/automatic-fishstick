@@ -6,6 +6,9 @@
     - vars.yml
 
   tasks:
+    - set_fact:
+      alloy_memory_budget_mb: "{{ ((ansible_memtotal_mb * 0.1) | int / 100) | floor | int * 100 }}"
+
     - name: Create directory for Alloy
       file:
         path: /opt/alloy
@@ -74,7 +77,7 @@
           - SYS_TIME
         uts: host
         cpu_shares: 512 # Approximate for 0.5 CPUs
-        memory: 2G
+        memory: "{{ alloy_memory_budget_mb | default(2048) }}M"
         # Raise open-file limit inside the container so Alloy can create enough
         # inotify descriptors. These values are conservative but well above
         # the defaults (soft/hard = 1024/4096).

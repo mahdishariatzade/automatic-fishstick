@@ -72,9 +72,9 @@ prometheus.remote_write "default" {
   
   // WAL retention and cleanup settings
   wal {
-    truncate_frequency = "{{ wal_truncate_frequency | default('3m') }}"
-    max_wal_time = "{{ wal_max_time | default('6h') }}"
-    min_wal_time = "{{ wal_min_time | default('10m') }}"
+    truncate_frequency = "{{ wal_truncate_frequency | default('5m') }}"
+    min_keepalive_time = "{{ min_keepalive_time | default('10m') }}"
+    max_keepalive_time = "{{ max_keepalive_time | default('6h') }}"
   }
   
   endpoint {
