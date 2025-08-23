@@ -69,6 +69,14 @@ prometheus.remote_write "default" {
   external_labels = {
     hostname = "{{ instance_name | trim }}",
   }
+  
+  // WAL retention and cleanup settings
+  wal {
+    truncate_frequency = "3m"
+    max_wal_time = "{{ wal_max_time | default('6h') }}"
+    min_wal_time = "{{ wal_min_time | default('10m') }}"
+  }
+  
   endpoint {
     url = "{{ prometheus_url }}"
     basic_auth {
@@ -77,6 +85,8 @@ prometheus.remote_write "default" {
     }
     queue_config {
       capacity = {{ prometheus_queue_capacity | default(10000) }}
+      max_samples_per_send = {{ prometheus_max_samples_per_send | default(2000) }}
+      max_shards = {{ prometheus_max_shards | default(10) }}
     }
   }
 }

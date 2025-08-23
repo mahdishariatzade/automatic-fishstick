@@ -1,6 +1,9 @@
 # Instance name
 instance_name: 'example'
 
+# Memory limits
+gomemlimit: '2G'
+
 # Live Debugging
 livedebugging_enabled: false
 # features
@@ -25,3 +28,16 @@ loki_password: 'password'
 
 # Force restart the container even if the configuration file has not changed
 force_restart: false
+
+# Scrape intervals (reduce to lower memory usage)
+prometheus_scrape_interval: '30s'
+cadvisor_scrape_interval: '30s'
+
+# Prometheus queue configuration for memory optimization
+prometheus_queue_capacity: 10000
+prometheus_max_samples_per_send: 2000
+prometheus_max_shards: 10
+
+# WAL (Write-Ahead Log) retention settings
+wal_max_time: '6h'
+wal_min_time: '1h'
