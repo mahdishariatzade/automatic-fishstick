@@ -7,7 +7,7 @@
 
   tasks:
     - set_fact:
-      alloy_memory_budget_mb: "{{ ((ansible_memtotal_mb * 0.1) | int / 100) | floor | int * 100 }}"
+        alloy_memory_budget_mb: "{{ ((ansible_memtotal_mb * 0.1) | int / 100) | floor | int * 100 }}"
 
     - name: Create directory for Alloy
       file:
