@@ -28,9 +28,18 @@
         state: present
         reload: yes
       loop:
-        - { name: 'fs.inotify.max_user_instances', value: '{{ inotify_max_user_instances | default(1024) }}' }
-        - { name: 'fs.inotify.max_user_watches', value: '{{ inotify_max_user_watches | default(524288) }}' }
-        - { name: 'fs.inotify.max_queued_events', value: '{{ inotify_max_queued_events | default(65536) }}' }
+        - {
+            name: 'fs.inotify.max_user_instances',
+            value: '{{ inotify_max_user_instances | default(1024) }}',
+          }
+        - {
+            name: 'fs.inotify.max_user_watches',
+            value: '{{ inotify_max_user_watches | default(524288) }}',
+          }
+        - {
+            name: 'fs.inotify.max_queued_events',
+            value: '{{ inotify_max_queued_events | default(65536) }}',
+          }
 
     - name: Run Alloy Docker container
       community.docker.docker_container:
@@ -65,7 +74,7 @@
           - SYS_TIME
         uts: host
         cpu_shares: 512 # Approximate for 0.5 CPUs
-        memory: 1G
+        memory: 2G
         # Raise open-file limit inside the container so Alloy can create enough
         # inotify descriptors. These values are conservative but well above
         # the defaults (soft/hard = 1024/4096).
