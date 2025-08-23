@@ -40,7 +40,7 @@
         restart: '{{ alloy_config_changed.changed or force_restart | default(false) }}'
         restart_policy: unless-stopped
         env:
-          GOMEMLIMIT: "{{ gomemlimit | default('2G') }}"
+          GOMEMLIMIT: "{{ gomemlimit | default('2GiB') }}"
         volumes:
           - /:/rootfs:ro
           - /var/run:/var/run:ro

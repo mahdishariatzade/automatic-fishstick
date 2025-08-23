@@ -14,16 +14,12 @@ logging_enabled: true
 
 # Prometheus credentials
 prometheus_url: 'http://example.com/prometheus'
-
 prometheus_username: 'username'
-
 prometheus_password: 'password'
 
 # Loki credentials
 loki_url: 'http://example.com/loki'
-
 loki_username: 'username'
-
 loki_password: 'password'
 
 # Force restart the container even if the configuration file has not changed
