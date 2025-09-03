@@ -1,0 +1,136 @@
+# Reference: https://docs.docker.com/engine/install/debian/
+
+- name: install Docker
+  hosts: all
+  become: true
+  vars:
+    # Set the docker apt mirror for downloading packages.
+    # Supported values: 'default', 'aliyun', 'azure', 'ito'
+    # 'aliyun': uses Aliyun mirror
+    # 'azure': uses Azure China Cloud mirror
+    # 'ito': uses Iranian mirror
+    # 'default': uses official docker repository
+    docker_apt_mirror: 'default'
+    docker_apt_mirror_urls:
+      default: 'https://download.docker.com'
+      aliyun: 'https://mirrors.aliyun.com/docker-ce'
+      azure: 'https://mirror.azure.cn/docker-ce'
+      ito: 'https://repo.ito.gov.ir/docker-ce'
+    docker_repo_base_url: "{{ docker_apt_mirror_urls[docker_apt_mirror] | default(docker_apt_mirror_urls['default']) }}"
+    docker_repo_url: '{{ docker_repo_base_url }}/linux/'
+
+    # Set to true to configure Docker registry mirrors (e.g., for Iranian users)
+    configure_registry_mirror: false
+    docker_registry_mirror_configuration: |
+      {
+        "registry-mirrors": ["https://docker.arvancloud.ir","https://registry.docker.ir","https://registry-1.docker.io"]
+      }
+    ansible_become_timeout: 30
+
+  tasks:
+    - name: Uninstall old versions
+      block:
+        - name: Uninstall old Docker packages
+          ansible.builtin.apt:
+            name:
+              - docker.io
+              - docker-doc
+              - docker-compose
+              - podman-docker
+              - containerd
+              - runc
+            state: absent
+      tags:
+        - docker
+        - uninstall
+
+    - name: Setup Docker repository
+      block:
+        - name: Install required packages for apt over https
+          ansible.builtin.apt:
+            name:
+              - ca-certificates
+              - curl
+            state: latest
+            update_cache: true
+
+        - name: Create keyrings directory
+          ansible.builtin.file:
+            path: /etc/apt/keyrings/
+            state: directory
+            mode: '0755'
+
+        - name: Download Docker GPG key (on control host)
+          ansible.builtin.get_url:
+            url: '{{ docker_repo_url }}{{ ansible_distribution | lower }}/gpg'
+            dest: /etc/apt/keyrings/docker.asc
+            mode: '0644'
+            force: true
+            timeout: 30
+
+        - name: Get deb architecture
+          ansible.builtin.command:
+            cmd: dpkg --print-architecture
+          register: deb_architecture
+          changed_when: false
+
+        - name: Set up the Docker repository
+          ansible.builtin.apt_repository:
+            repo: 'deb [arch={{ deb_architecture.stdout }} signed-by=/etc/apt/keyrings/docker.asc] {{ docker_repo_url }}{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable'
+            state: present
+            filename: docker
+      tags:
+        - docker
+        - repo
+
+    - name: Install Docker Engine
+      block:
+        - name: Install Docker packages and plugins
+          ansible.builtin.apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: latest
+            update_cache: true
+      tags:
+        - docker
+        - install
+
+    - name: Configure Docker
+      block:
+        - name: Configure Docker registry mirror
+          ansible.builtin.copy:
+            content: '{{ docker_registry_mirror_configuration }}'
+            dest: /etc/docker/daemon.json
+            owner: root
+            group: root
+            mode: '0644'
+            backup: yes
+          when: configure_registry_mirror
+          notify: Restart Docker
+      tags:
+        - docker
+        - configure
+
+    - name: Flush handlers to apply Docker configuration
+      ansible.builtin.meta: flush_handlers
+
+    - name: Verify installation
+      block:
+        - name: Check installation by running hello-world
+          ansible.builtin.command:
+            cmd: docker run hello-world
+          changed_when: false
+      tags:
+        - docker
+        - verify
+
+  handlers:
+    - name: Restart Docker
+      ansible.builtin.systemd_service:
+        name: docker
+        daemon_reload: true
+        state: restarted
