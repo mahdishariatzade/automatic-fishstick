@@ -1,0 +1,4 @@
+---
+# Ansible collections required by the postgres_backup role
+collections:
+  - name: robertdebock.update
