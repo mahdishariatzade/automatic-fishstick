@@ -98,6 +98,7 @@ prometheus.remote_write "default" {
 // ---------- LOGS ----------
 discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
 }
 
 discovery.relabel "logs_integrations_docker" {
